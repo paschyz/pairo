@@ -1,21 +1,26 @@
 # Pairo
 
-AI-powered PR review tool. This repo is the admin dashboard (Vue 3 + TypeScript).
+AI-powered PR review GitHub App. Monorepo: `dashboard/` (Vue 3) + `backend/` (Python/FastAPI).
 
-## Stack
+## Dashboard (`dashboard/`)
+
+### Stack
 
 - **Frontend:** Vue 3 (Composition API + `<script setup>`), TypeScript, Vite
 - **State:** Pinia
 - **Routing:** Vue Router
 - **Styling:** Scoped CSS (no framework — keep it that way unless discussed)
 
-## Commands
+### Commands
 
-- `npm run dev` — start dev server
-- `npm run build` — type-check + production build
-- `npm run preview` — preview production build
+```sh
+cd dashboard
+npm run dev       # start dev server
+npm run build     # type-check + production build
+npm run preview   # preview production build
+```
 
-## Conventions
+### Conventions
 
 - Use `<script setup lang="ts">` for all components
 - Path alias: `@/` → `src/`
