@@ -1,15 +1,20 @@
 <script setup lang="ts">
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
 </script>
 
 <template>
-  <div class="app">
+  <div v-if="route.meta.layout === 'dashboard'" class="app">
     <nav class="sidebar">
       <div class="logo">
-        <span class="logo-icon">◈</span>
-        <span class="logo-text">pairo</span>
+        <RouterLink to="/" class="logo-link">
+          <span class="logo-icon">◈</span>
+          <span class="logo-text">pairo</span>
+        </RouterLink>
       </div>
       <ul class="nav-links">
-        <li><RouterLink to="/" class="nav-link active">Dashboard</RouterLink></li>
+        <li><RouterLink to="/dashboard" class="nav-link">Dashboard</RouterLink></li>
         <li><a class="nav-link disabled">Repositories</a></li>
         <li><a class="nav-link disabled">Reviews</a></li>
         <li><a class="nav-link disabled">Settings</a></li>
@@ -19,6 +24,7 @@
       <RouterView />
     </main>
   </div>
+  <RouterView v-else />
 </template>
 
 <style>
@@ -53,12 +59,17 @@ body {
 }
 
 .logo {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
   padding: 0 0.75rem 1.5rem;
   border-bottom: 1px solid #2a2d3a;
   margin-bottom: 1.5rem;
+}
+
+.logo-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: inherit;
 }
 
 .logo-icon {
@@ -94,7 +105,6 @@ body {
   color: #e1e4e8;
 }
 
-.nav-link.active,
 .nav-link.router-link-active {
   background: #1e2030;
   color: #e1e4e8;
