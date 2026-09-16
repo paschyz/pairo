@@ -1,6 +1,8 @@
 """SQLAlchemy implementation of DecisionRepository."""
 
 import asyncio
+from collections import Counter
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -94,6 +96,26 @@ class SqlDecisionRepository:
             return len(self._session.execute(stmt).all())
 
         return await asyncio.to_thread(_count)
+
+    async def memory_stats(self) -> dict[str, Any]:
+        def _stats() -> dict[str, Any]:
+            stmt = select(FindingDecisionRow).where(
+                FindingDecisionRow.status == "rejected"
+            )
+            rows = self._session.scalars(stmt).all()
+            by_signal: Counter[str] = Counter()
+            by_category: Counter[str] = Counter()
+            for row in rows:
+                if row.signal:
+                    by_signal[row.signal] += 1
+                by_category[row.category] += 1
+            return {
+                "total_rejected": len(rows),
+                "by_signal": dict(by_signal),
+                "by_category": dict(by_category),
+            }
+
+        return await asyncio.to_thread(_stats)
 
 
 def _to_domain(row: FindingDecisionRow) -> FindingDecision:

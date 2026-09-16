@@ -76,6 +76,7 @@ src/pairo/
 - `GET /api/reviews` — list reviews (paginated: `?offset=0&limit=20`)
 - `GET /api/reviews/{id}` — review detail with findings
 - `GET /api/stats` — aggregate stats (total reviews, findings, tokens)
+- `GET /api/stats/memory` — memory stats (rejections by signal/category)
 
 ### Database
 

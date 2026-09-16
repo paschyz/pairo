@@ -1,5 +1,10 @@
+from typing import Any
+
 from fastapi import APIRouter, Response
 
+from pairo.infrastructure.persistence.decision_repo import (
+    SqlDecisionRepository,
+)
 from pairo.infrastructure.persistence.engine import get_session
 from pairo.infrastructure.persistence.repository import SqlReviewRepository
 
@@ -61,6 +66,7 @@ async def get_review(review_id: int) -> dict[str, object] | Response:
                 "issue": f.issue,
                 "suggestion": f.suggestion,
                 "source": f.source.value,
+                "category": f.category,
             }
             for f in r.findings
         ],
@@ -71,3 +77,10 @@ async def get_review(review_id: int) -> dict[str, object] | Response:
 async def stats() -> dict[str, int]:
     repo = _repo()
     return await repo.stats()
+
+
+@router.get("/stats/memory")
+async def memory_stats() -> dict[str, Any]:
+    session = get_session()
+    decision_repo = SqlDecisionRepository(session)
+    return await decision_repo.memory_stats()
