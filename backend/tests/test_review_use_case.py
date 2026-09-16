@@ -41,6 +41,8 @@ class FakeLLM:
     def __init__(self, findings: list[Finding] | None = None) -> None:
         self._findings = findings or []
         self.called = False
+        self.last_input_tokens: int = 0
+        self.last_output_tokens: int = 0
 
     async def review(
         self,
@@ -50,7 +52,33 @@ class FakeLLM:
         language: str,
     ) -> list[Finding]:
         self.called = True
+        self.last_input_tokens = 100
+        self.last_output_tokens = 50
         return self._findings
+
+
+class FakeReviewRepo:
+    def __init__(self, today_count: int = 0) -> None:
+        self.saved: list[Review] = []
+        self._today_count = today_count
+
+    async def save(self, review: Review) -> None:
+        review.id = len(self.saved) + 1
+        self.saved.append(review)
+
+    async def exists(self, delivery_id: str) -> bool:
+        return any(r.delivery_id == delivery_id for r in self.saved)
+
+    async def get(self, review_id: int) -> Review | None:
+        return next((r for r in self.saved if r.id == review_id), None)
+
+    async def list_reviews(
+        self, offset: int = 0, limit: int = 20,
+    ) -> list[Review]:
+        return self.saved[offset : offset + limit]
+
+    async def today_review_count(self) -> int:
+        return self._today_count
 
 
 async def test_runs_rules_and_posts_review() -> None:
@@ -110,6 +138,74 @@ async def test_posts_review_even_with_no_findings() -> None:
 
     assert code_host.posted_review is not None
     assert code_host.posted_review.total == 0
+
+
+async def test_saves_review_to_repository() -> None:
+    files = [FileDiff("main.py", [AddedLine(1, "x = 1")])]
+    code_host = FakeCodeHost(files)
+    llm = FakeLLM()
+    repo = FakeReviewRepo()
+
+    uc = ReviewPullRequest(
+        code_host=code_host, llm_reviewer=llm, review_repo=repo,
+    )
+    await uc.execute(
+        owner="acme", repo="web", pr_number=7, head_sha="abc",
+        action="opened", delivery_id="d-1",
+    )
+
+    assert len(repo.saved) == 1
+    saved = repo.saved[0]
+    assert saved.delivery_id == "d-1"
+    assert saved.owner == "acme"
+    assert saved.repo == "web"
+    assert saved.pr_number == 7
+    assert saved.input_tokens == 100
+
+
+async def test_degraded_mode_skips_llm_when_quota_exhausted() -> None:
+    files = [
+        FileDiff(
+            "App.vue",
+            [AddedLine(3, '  <img src="logo.png">')],
+        ),
+    ]
+    code_host = FakeCodeHost(files)
+    llm = FakeLLM()
+    repo = FakeReviewRepo(today_count=50)
+
+    uc = ReviewPullRequest(
+        code_host=code_host, llm_reviewer=llm, review_repo=repo,
+        daily_quota=50,
+    )
+    await uc.execute(
+        owner="o", repo="r", pr_number=1, head_sha="abc", action="opened",
+    )
+
+    assert not llm.called
+    assert code_host.posted_review is not None
+    rule_findings = [
+        f for f in code_host.posted_review.findings
+        if f.source == Source.RULE
+    ]
+    assert len(rule_findings) >= 1
+
+
+async def test_degraded_mode_not_triggered_when_under_quota() -> None:
+    files = [FileDiff("main.py", [AddedLine(1, "x = 1")])]
+    code_host = FakeCodeHost(files)
+    llm = FakeLLM()
+    repo = FakeReviewRepo(today_count=10)
+
+    uc = ReviewPullRequest(
+        code_host=code_host, llm_reviewer=llm, review_repo=repo,
+        daily_quota=50,
+    )
+    await uc.execute(
+        owner="o", repo="r", pr_number=1, head_sha="abc", action="opened",
+    )
+
+    assert llm.called
 
 
 async def test_no_review_when_no_added_lines() -> None:
