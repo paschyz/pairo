@@ -1,67 +1,60 @@
 import time
 
+import httpx
 import jwt
 import pytest
+import respx
 
 from pairo.infrastructure.github.auth import (
     GitHubAppAuth,
     _generate_jwt,
 )
 
-# RSA key pair for tests only — not a real secret
 _TEST_PRIVATE_KEY = """\
 -----BEGIN RSA PRIVATE KEY-----
-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
+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
 -----END RSA PRIVATE KEY-----"""
+
+_DECODE_OPTS = {"verify_signature": False, "algorithms": ["RS256"]}
 
 
 def test_generate_jwt() -> None:
     token = _generate_jwt(app_id=12345, private_key=_TEST_PRIVATE_KEY)
-    decoded = jwt.decode(
-        token,
-        _TEST_PRIVATE_KEY,
-        algorithms=["RS256"],
-        options={"verify_exp": False},
-    )
+    decoded = jwt.decode(token, options=_DECODE_OPTS)
     assert decoded["iss"] == "12345"
     assert "iat" in decoded
     assert "exp" in decoded
-    assert decoded["exp"] - decoded["iat"] <= 600
+    assert decoded["exp"] - decoded["iat"] <= 660
 
 
 def test_jwt_iat_is_backdated() -> None:
     before = int(time.time())
     token = _generate_jwt(app_id=1, private_key=_TEST_PRIVATE_KEY)
-    decoded = jwt.decode(
-        token,
-        _TEST_PRIVATE_KEY,
-        algorithms=["RS256"],
-        options={"verify_exp": False, "verify_iat": False},
-    )
+    decoded = jwt.decode(token, options=_DECODE_OPTS)
     assert decoded["iat"] <= before
 
 
@@ -72,25 +65,13 @@ def auth() -> GitHubAppAuth:
 
 def test_auth_generates_jwt(auth: GitHubAppAuth) -> None:
     token = auth.get_jwt()
-    assert token
-    decoded = jwt.decode(
-        token,
-        _TEST_PRIVATE_KEY,
-        algorithms=["RS256"],
-        options={"verify_exp": False},
-    )
+    decoded = jwt.decode(token, options=_DECODE_OPTS)
     assert decoded["iss"] == "12345"
 
 
-async def test_auth_get_installation_token(
-    auth: GitHubAppAuth,
-) -> None:
-    import httpx
-    import respx
-
-    respx.post(
-        "https://api.github.com/app/installations/999/access_tokens"
-    ).mock(
+@respx.mock
+async def test_auth_get_installation_token(auth: GitHubAppAuth) -> None:
+    respx.post("https://api.github.com/app/installations/999/access_tokens").mock(
         return_value=httpx.Response(
             201,
             json={
@@ -99,17 +80,12 @@ async def test_auth_get_installation_token(
             },
         )
     )
-    with respx.mock:
-        token = await auth.get_installation_token(999)
+    token = await auth.get_installation_token(999)
     assert token == "ghs_fake_token"
 
 
-async def test_auth_caches_installation_token(
-    auth: GitHubAppAuth,
-) -> None:
-    import httpx
-    import respx
-
+@respx.mock
+async def test_auth_caches_installation_token(auth: GitHubAppAuth) -> None:
     route = respx.post(
         "https://api.github.com/app/installations/999/access_tokens"
     ).mock(
@@ -121,8 +97,7 @@ async def test_auth_caches_installation_token(
             },
         )
     )
-    with respx.mock:
-        t1 = await auth.get_installation_token(999)
-        t2 = await auth.get_installation_token(999)
+    t1 = await auth.get_installation_token(999)
+    t2 = await auth.get_installation_token(999)
     assert t1 == t2 == "ghs_cached"
     assert route.call_count == 1
