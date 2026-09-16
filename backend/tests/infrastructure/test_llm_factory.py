@@ -14,7 +14,7 @@ def test_create_gemini_reviewer() -> None:
     reviewer = create_reviewer(
         provider="gemini",
         api_key="test-key",
-        model="gemini-2.0-flash",
+        model="gemini-3.6-flash",
         rpm_limit=15,
     )
     assert isinstance(reviewer, GeminiReviewer)

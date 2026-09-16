@@ -19,7 +19,7 @@ def create_reviewer(
         client = genai.Client(api_key=api_key)
         return GeminiReviewer(
             client=client,
-            model=model or "gemini-2.0-flash",
+            model=model or "gemini-3.6-flash",
             rate_limiter=RateLimiter(rpm=rpm_limit),
         )
     msg = f"unknown LLM provider: {provider}"

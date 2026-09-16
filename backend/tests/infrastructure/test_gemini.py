@@ -86,7 +86,7 @@ async def test_gemini_reviewer_calls_api() -> None:
 
     reviewer = GeminiReviewer(
         client=mock_client,
-        model="gemini-2.0-flash",
+        model="gemini-3.6-flash",
         rate_limiter=RateLimiter(rpm=15),
     )
     files = [FileDiff("app.py", [AddedLine(1, "x = 1")])]
@@ -107,7 +107,7 @@ async def test_gemini_reviewer_tracks_tokens() -> None:
 
     reviewer = GeminiReviewer(
         client=mock_client,
-        model="gemini-2.0-flash",
+        model="gemini-3.6-flash",
         rate_limiter=RateLimiter(rpm=15),
     )
     files = [FileDiff("app.py", [AddedLine(1, "x = 1")])]
@@ -127,7 +127,7 @@ async def test_gemini_reviewer_returns_empty_on_error() -> None:
 
     reviewer = GeminiReviewer(
         client=mock_client,
-        model="gemini-2.0-flash",
+        model="gemini-3.6-flash",
         rate_limiter=RateLimiter(rpm=15),
     )
     files = [FileDiff("app.py", [AddedLine(1, "x = 1")])]
