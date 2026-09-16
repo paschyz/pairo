@@ -34,7 +34,7 @@ npm run preview   # preview production build
 
 - **Runtime:** Python 3.12, FastAPI, Pydantic v2, httpx (async)
 - **LLM:** `google-genai` SDK (Gemini), behind a `LLMReviewer` port
-- **DB:** SQLAlchemy 2 + Alembic (SQLite local, PostgreSQL prod)
+- **DB:** SQLAlchemy 2 + Alembic (SQLite local, Supabase/PostgreSQL prod)
 - **Auth:** `pyjwt[crypto]` for GitHub App JWT
 - **Tooling:** uv, ruff, mypy (strict), pytest + pytest-asyncio + respx
 
@@ -68,3 +68,17 @@ src/pairo/
 - No business logic in FastAPI routes
 - `LLM_PROVIDER=fake` for tests and dev without API key
 - TDD: test first, then implementation, then refactor
+
+### API Endpoints
+
+- `POST /webhook` — GitHub webhook handler
+- `GET /health` — health check
+- `GET /api/reviews` — list reviews (paginated: `?offset=0&limit=20`)
+- `GET /api/reviews/{id}` — review detail with findings
+- `GET /api/stats` — aggregate stats (total reviews, findings, tokens)
+
+### Database
+
+- Local: `DATABASE_URL=sqlite:///./pairo.db` (default)
+- Prod: Supabase PostgreSQL via `DATABASE_URL` env var
+- Migrations: `make migrate` (requires `DATABASE_URL` exported or sourced from `.env`)
