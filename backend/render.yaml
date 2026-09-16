@@ -3,8 +3,8 @@ services:
     name: pairo-api
     runtime: python
     rootDir: backend
-    buildCommand: pip install .
-    startCommand: PYTHONPATH=/app/src uvicorn pairo.app:app --host 0.0.0.0 --port $PORT
+    buildCommand: pip install . && python -c "import pairo; print(pairo.__file__)" && ls -la /opt/render/project/src/src/
+    startCommand: PYTHONPATH=/opt/render/project/src/src uvicorn pairo.app:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: "3.12"
