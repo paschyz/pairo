@@ -19,6 +19,8 @@ class Review:
     pr_number: int = 0
     head_sha: str = ""
     created_at: datetime | None = None
+    memory_filtered: int = 0
+    memory_summary: str = ""
 
     def counts_by_axis(self) -> dict[Axis, int]:
         if not self.findings:

@@ -73,12 +73,14 @@ async def _run_review(payload: dict[str, Any], delivery_id: str) -> None:
 
         session = get_session()
         review_repo = SqlReviewRepository(session)
+        decision_repo = SqlDecisionRepository(session)
 
         uc = ReviewPullRequest(
             code_host=code_host,
             llm_reviewer=llm,
             review_repo=review_repo,
             daily_quota=settings.daily_review_quota,
+            decision_repo=decision_repo,
         )
         await uc.execute(
             owner=owner,

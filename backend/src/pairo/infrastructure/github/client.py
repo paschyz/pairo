@@ -66,6 +66,8 @@ def _format_review_body(review: Review) -> str:
         lines.append(f"Tokens : {review.input_tokens} in / {review.output_tokens} out")
     if review.co2_g is not None:
         lines.append(f"🌍 CO₂ estimé : {review.co2_g:.4f} g")
+    if review.memory_summary:
+        lines.append(f"\n🧠 {review.memory_summary}")
 
     return "\n".join(lines)
 

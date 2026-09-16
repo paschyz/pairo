@@ -1,7 +1,9 @@
 import logging
 from typing import Any, Protocol
 
+from pairo.domain.filter_findings import filter_findings, memory_summary_line
 from pairo.domain.finding import Finding
+from pairo.domain.fingerprint import compute_fingerprint
 from pairo.domain.ports import FileDiff
 from pairo.domain.repo_config import parse_repo_config
 from pairo.domain.review import Review
@@ -53,11 +55,13 @@ class ReviewPullRequest:
         llm_reviewer: Any,
         review_repo: Any = None,
         daily_quota: int = 0,
+        decision_repo: Any = None,
     ) -> None:
         self._code_host: CodeHost = code_host
         self._llm: LLMReviewer = llm_reviewer
         self._repo = review_repo
         self._daily_quota = daily_quota
+        self._decision_repo = decision_repo
 
     async def execute(
         self,
@@ -109,6 +113,39 @@ class ReviewPullRequest:
             )
             findings.extend(llm_findings)
 
+        # --- Memory filtering ---
+        filtered_count = 0
+        memory_line = ""
+        if self._decision_repo:
+            repo_full = f"{owner}/{repo}"
+            decisions = await self._decision_repo.get_decisions(
+                repo_full, pr_number
+            )
+            if decisions:
+                # Build fingerprint -> finding mapping
+                findings_by_fp: dict[str, Finding] = {}
+                for finding in findings:
+                    # ponytail: simple fp with issue as context,
+                    # proper context lines when diff tracking lands
+                    fp = compute_fingerprint(
+                        axis=finding.axis.value,
+                        category="",
+                        file_path=finding.file,
+                        context_lines=[finding.issue],
+                        rule_id=(
+                            f"{finding.axis.value}.{finding.source.value}"
+                            if finding.source.value == "rule"
+                            else None
+                        ),
+                    )
+                    findings_by_fp[fp] = finding
+
+                kept, filtered_count = filter_findings(
+                    findings_by_fp, decisions
+                )
+                findings = list(kept.values())
+                memory_line = memory_summary_line(filtered_count)
+
         review = Review(
             findings=findings,
             delivery_id=delivery_id,
@@ -119,6 +156,8 @@ class ReviewPullRequest:
             model=getattr(self._llm, "model_name", None),
             input_tokens=self._llm.last_input_tokens,
             output_tokens=self._llm.last_output_tokens,
+            memory_filtered=filtered_count,
+            memory_summary=memory_line,
         )
         await self._code_host.post_review(owner, repo, pr_number, review)
 
