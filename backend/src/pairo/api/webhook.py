@@ -10,6 +10,8 @@ from pairo.config import settings
 from pairo.infrastructure.github.auth import GitHubAppAuth
 from pairo.infrastructure.github.client import GitHubClient
 from pairo.infrastructure.llm.factory import create_reviewer
+from pairo.infrastructure.persistence.engine import get_session
+from pairo.infrastructure.persistence.repository import SqlReviewRepository
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +46,7 @@ def _load_private_key() -> str:
         return f.read()
 
 
-async def _run_review(payload: dict[str, Any]) -> None:
+async def _run_review(payload: dict[str, Any], delivery_id: str) -> None:
     repo_full = payload["repository"]["full_name"]
     pr_number = payload["number"]
     try:
@@ -65,7 +67,15 @@ async def _run_review(payload: dict[str, Any]) -> None:
             rpm_limit=settings.llm_rpm_limit,
         )
 
-        uc = ReviewPullRequest(code_host=code_host, llm_reviewer=llm)
+        session = get_session()
+        review_repo = SqlReviewRepository(session)
+
+        uc = ReviewPullRequest(
+            code_host=code_host,
+            llm_reviewer=llm,
+            review_repo=review_repo,
+            daily_quota=settings.daily_review_quota,
+        )
         await uc.execute(
             owner=owner,
             repo=repo,
@@ -73,10 +83,14 @@ async def _run_review(payload: dict[str, Any]) -> None:
             head_sha=head_sha,
             action=action,
             before_sha=before_sha,
+            delivery_id=delivery_id,
         )
         logger.info("Review posted for %s#%s", repo_full, pr_number)
     except Exception:
         logger.exception("Review failed for %s#%s", repo_full, pr_number)
+    finally:
+        if "session" in locals():
+            session.close()
 
 
 @router.post("/webhook", status_code=202, response_model=None)
@@ -113,5 +127,5 @@ async def webhook(
         return _ignored("Already processed")
 
     _seen_deliveries.add(delivery_id)
-    background_tasks.add_task(_run_review, payload)
+    background_tasks.add_task(_run_review, payload, delivery_id)
     return {"detail": "Review queued"}

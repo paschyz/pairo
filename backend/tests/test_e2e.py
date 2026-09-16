@@ -42,8 +42,27 @@ GH = "https://api.github.com"
 
 @pytest.fixture(autouse=True)
 def _e2e_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy.pool import StaticPool
+
+    from pairo.infrastructure.persistence.models import Base
+
     monkeypatch.setattr(settings, "github_app_id", 12345)
     monkeypatch.setattr(settings, "github_private_key", _TEST_PRIVATE_KEY)
+
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    Base.metadata.create_all(engine)
+    factory = sessionmaker(bind=engine)
+
+    import pairo.infrastructure.persistence.engine as eng
+
+    monkeypatch.setattr(eng, "_engine", engine)
+    monkeypatch.setattr(eng, "_SessionLocal", factory)
 
 
 def _sign(body: bytes) -> str:
@@ -104,7 +123,7 @@ async def test_run_review_posts_findings() -> None:
     from pairo.api.webhook import _run_review
 
     review_route = _mock_github_api()
-    await _run_review(_pr_payload())
+    await _run_review(_pr_payload(), "e2e-delivery-1")
     assert review_route.called
 
 
