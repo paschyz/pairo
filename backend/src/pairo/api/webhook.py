@@ -5,7 +5,11 @@ from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Request, Response
 
+from pairo.application.review_pull_request import ReviewPullRequest
 from pairo.config import settings
+from pairo.infrastructure.github.auth import GitHubAppAuth
+from pairo.infrastructure.github.client import GitHubClient
+from pairo.infrastructure.llm.fake import FakeLLMReviewer
 
 logger = logging.getLogger(__name__)
 
@@ -33,13 +37,41 @@ def _ignored(detail: str) -> Response:
     )
 
 
+def _load_private_key() -> str:
+    if settings.github_private_key:
+        return settings.github_private_key
+    with open(settings.github_private_key_path) as f:
+        return f.read()
+
+
 async def _run_review(payload: dict[str, Any]) -> None:
-    # ponytail: stub — wired in step 4 when diff retrieval + review posting land
-    logger.info(
-        "Review queued for %s#%s",
-        payload["repository"]["full_name"],
-        payload["number"],
-    )
+    repo_full = payload["repository"]["full_name"]
+    pr_number = payload["number"]
+    try:
+        owner, repo = repo_full.split("/")
+        installation_id = payload["installation"]["id"]
+        pr = payload["pull_request"]
+        head_sha = pr["head"]["sha"]
+        action = payload["action"]
+        before_sha = payload.get("before")
+
+        auth = GitHubAppAuth(settings.github_app_id, _load_private_key())
+        token = await auth.get_installation_token(installation_id)
+        code_host = GitHubClient(token)
+        llm = FakeLLMReviewer()
+
+        uc = ReviewPullRequest(code_host=code_host, llm_reviewer=llm)
+        await uc.execute(
+            owner=owner,
+            repo=repo,
+            pr_number=pr_number,
+            head_sha=head_sha,
+            action=action,
+            before_sha=before_sha,
+        )
+        logger.info("Review posted for %s#%s", repo_full, pr_number)
+    except Exception:
+        logger.exception("Review failed for %s#%s", repo_full, pr_number)
 
 
 @router.post("/webhook", status_code=202, response_model=None)

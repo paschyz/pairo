@@ -1,5 +1,3 @@
-import pytest
-
 from pairo.application.review_pull_request import ReviewPullRequest
 from pairo.domain.diff import AddedLine
 from pairo.domain.finding import Axis, Finding, Source
