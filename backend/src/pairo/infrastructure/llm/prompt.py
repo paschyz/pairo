@@ -4,7 +4,10 @@ from pairo.domain.ports import FileDiff
 _AXIS_DESCRIPTIONS = {
     "crafts": "nommage, fonctions longues, duplication, code mort, lisibilité",
     "eco": "requêtes N+1, absence de pagination, dépendances lourdes, calculs inutiles",
-    "a11y": "alt manquant, contraste faible, éléments non sémantiques, navigation clavier",
+    "a11y": (
+        "alt manquant, contraste faible, "
+        "éléments non sémantiques, navigation clavier"
+    ),
 }
 
 

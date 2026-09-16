@@ -9,7 +9,7 @@ from pairo.application.review_pull_request import ReviewPullRequest
 from pairo.config import settings
 from pairo.infrastructure.github.auth import GitHubAppAuth
 from pairo.infrastructure.github.client import GitHubClient
-from pairo.infrastructure.llm.fake import FakeLLMReviewer
+from pairo.infrastructure.llm.factory import create_reviewer
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +58,12 @@ async def _run_review(payload: dict[str, Any]) -> None:
         auth = GitHubAppAuth(settings.github_app_id, _load_private_key())
         token = await auth.get_installation_token(installation_id)
         code_host = GitHubClient(token)
-        llm = FakeLLMReviewer()
+        llm = create_reviewer(
+            provider=settings.llm_provider,
+            api_key=settings.gemini_api_key,
+            model=settings.llm_model_default,
+            rpm_limit=settings.llm_rpm_limit,
+        )
 
         uc = ReviewPullRequest(code_host=code_host, llm_reviewer=llm)
         await uc.execute(

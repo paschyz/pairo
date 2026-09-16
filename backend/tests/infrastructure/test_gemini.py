@@ -2,7 +2,7 @@ import json
 from unittest.mock import AsyncMock, Mock
 
 from pairo.domain.diff import AddedLine
-from pairo.domain.finding import Axis, Finding, Source
+from pairo.domain.finding import Axis, Source
 from pairo.domain.ports import FileDiff
 from pairo.infrastructure.llm.gemini import GeminiReviewer, _parse_findings
 from pairo.infrastructure.llm.rate_limiter import RateLimiter
