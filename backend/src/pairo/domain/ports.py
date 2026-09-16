@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
+from pairo.domain.decision import FindingDecision
 from pairo.domain.diff import AddedLine
 from pairo.domain.finding import Finding
 from pairo.domain.review import Review
@@ -67,3 +68,15 @@ class ReviewRepository(Protocol):
     async def today_review_count(self) -> int: ...
 
     async def stats(self) -> dict[str, int]: ...
+
+
+class DecisionRepository(Protocol):
+    async def get_decisions(
+        self, repo: str, pr_number: int
+    ) -> list[FindingDecision]: ...
+
+    async def save(self, decision: FindingDecision) -> None: ...
+
+    async def get_by_fingerprint(
+        self, repo: str, pr_number: int, fingerprint: str
+    ) -> FindingDecision | None: ...
