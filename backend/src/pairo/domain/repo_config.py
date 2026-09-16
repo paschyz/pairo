@@ -18,6 +18,8 @@ class RepoConfig:
     ignore: list[str] = field(default_factory=list)
     ignore_categories: list[str] = field(default_factory=list)
     language: str = "fr"
+    memory_enabled: bool = True
+    memory_classify_replies: bool = False
     parse_error: str | None = None
 
     def should_ignore(self, path: str) -> bool:
@@ -40,10 +42,15 @@ def parse_repo_config(raw: str | None) -> RepoConfig:
         return RepoConfig(parse_error=str(e))
     if not isinstance(data, dict):
         return RepoConfig()
+    memory = data.get("memory", {})
+    if not isinstance(memory, dict):
+        memory = {}
     return RepoConfig(
         axes=data.get("axes", _DEFAULT_AXES),
         max_image_kb=data.get("max_image_kb", _DEFAULT_MAX_IMAGE_KB),
         ignore=data.get("ignore", []),
         ignore_categories=data.get("ignore_categories", []),
         language=data.get("language", _DEFAULT_LANGUAGE),
+        memory_enabled=memory.get("enabled", True),
+        memory_classify_replies=memory.get("classify_replies", False),
     )
