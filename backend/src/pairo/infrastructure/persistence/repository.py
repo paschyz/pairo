@@ -84,6 +84,37 @@ class SqlReviewRepository:
 
         return await asyncio.to_thread(_count)
 
+    async def stats(self) -> dict[str, int]:
+        def _stats() -> dict[str, int]:
+            review_count = (
+                self._session.execute(
+                    select(func.count(ReviewRow.id))
+                ).scalar() or 0
+            )
+            finding_count = (
+                self._session.execute(
+                    select(func.count(FindingRow.id))
+                ).scalar() or 0
+            )
+            input_tok = (
+                self._session.execute(
+                    select(func.coalesce(func.sum(ReviewRow.input_tokens), 0))
+                ).scalar() or 0
+            )
+            output_tok = (
+                self._session.execute(
+                    select(func.coalesce(func.sum(ReviewRow.output_tokens), 0))
+                ).scalar() or 0
+            )
+            return {
+                "total_reviews": int(review_count),
+                "total_findings": int(finding_count),
+                "total_input_tokens": int(input_tok),
+                "total_output_tokens": int(output_tok),
+            }
+
+        return await asyncio.to_thread(_stats)
+
 
 def _to_domain(row: ReviewRow) -> Review:
     return Review(

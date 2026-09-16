@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from pairo.api.reviews import router as reviews_router
 from pairo.api.webhook import router as webhook_router
 from pairo.config import settings
 
@@ -14,6 +15,7 @@ app.add_middleware(
 )
 
 app.include_router(webhook_router)
+app.include_router(reviews_router)
 
 
 @app.get("/health")

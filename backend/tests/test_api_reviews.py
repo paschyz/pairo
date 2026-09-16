@@ -4,7 +4,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from pairo.config import settings
 from pairo.domain.finding import Axis, Finding, Source
 from pairo.domain.review import Review
 from pairo.infrastructure.persistence.models import Base
