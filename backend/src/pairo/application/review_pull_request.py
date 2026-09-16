@@ -116,6 +116,7 @@ class ReviewPullRequest:
             repo=repo,
             pr_number=pr_number,
             head_sha=head_sha,
+            model=getattr(self._llm, "model_name", None),
             input_tokens=self._llm.last_input_tokens,
             output_tokens=self._llm.last_output_tokens,
         )

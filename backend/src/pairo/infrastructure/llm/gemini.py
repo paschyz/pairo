@@ -52,6 +52,7 @@ class GeminiReviewer:
         self._rate_limiter = rate_limiter
         self.last_input_tokens: int = 0
         self.last_output_tokens: int = 0
+        self.model_name: str = model
 
     async def review(
         self,
