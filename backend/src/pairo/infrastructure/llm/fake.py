@@ -3,6 +3,9 @@ from pairo.domain.ports import FileDiff
 
 
 class FakeLLMReviewer:
+    last_input_tokens: int = 0
+    last_output_tokens: int = 0
+
     async def review(
         self,
         files: list[FileDiff],

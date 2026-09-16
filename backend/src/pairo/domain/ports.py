@@ -43,6 +43,9 @@ class CodeHost(Protocol):
 
 
 class LLMReviewer(Protocol):
+    last_input_tokens: int
+    last_output_tokens: int
+
     async def review(
         self,
         files: list[FileDiff],
@@ -53,10 +56,12 @@ class LLMReviewer(Protocol):
 
 
 class ReviewRepository(Protocol):
-    async def save(self, review: Review, delivery_id: str) -> None: ...
+    async def save(self, review: Review) -> None: ...
 
     async def exists(self, delivery_id: str) -> bool: ...
 
     async def get(self, review_id: int) -> Review | None: ...
 
     async def list_reviews(self, offset: int = 0, limit: int = 20) -> list[Review]: ...
+
+    async def today_review_count(self) -> int: ...

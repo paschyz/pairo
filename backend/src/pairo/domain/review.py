@@ -1,5 +1,6 @@
 from collections import Counter
 from dataclasses import dataclass, field
+from datetime import datetime
 
 from pairo.domain.finding import Axis, Finding
 
@@ -11,6 +12,13 @@ class Review:
     input_tokens: int = 0
     output_tokens: int = 0
     co2_g: float | None = None
+    id: int | None = None
+    delivery_id: str = ""
+    owner: str = ""
+    repo: str = ""
+    pr_number: int = 0
+    head_sha: str = ""
+    created_at: datetime | None = None
 
     def counts_by_axis(self) -> dict[Axis, int]:
         if not self.findings:
