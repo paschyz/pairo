@@ -21,7 +21,9 @@ def check_missing_alt(path: str, added_lines: list[AddedLine]) -> list[Finding]:
                     file=path,
                     line=line.number,
                     issue="<img> sans attribut `alt`",
-                    suggestion="Ajouter `alt=\"description\"` ou `alt=\"\"` si décorative",
+                    suggestion=(
+                        'Ajouter `alt="description"` ou `alt=""` si décorative'
+                    ),
                     source=Source.RULE,
                 )
             )

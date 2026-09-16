@@ -1,14 +1,14 @@
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 
 
-class Axis(str, Enum):
+class Axis(StrEnum):
     CRAFTS = "crafts"
     ECO = "eco"
     A11Y = "a11y"
 
 
-class Source(str, Enum):
+class Source(StrEnum):
     RULE = "rule"
     LLM = "llm"
 

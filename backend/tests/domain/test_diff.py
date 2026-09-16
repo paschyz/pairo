@@ -1,6 +1,5 @@
 from pairo.domain.diff import AddedLine, parse_patch
 
-
 SIMPLE_PATCH = """\
 @@ -1,4 +1,6 @@
  line one

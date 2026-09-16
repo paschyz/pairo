@@ -25,9 +25,7 @@ def parse_patch(patch: str) -> list[AddedLine]:
         elif raw.startswith("+"):
             result.append(AddedLine(number=current_line, content=raw[1:]))
             current_line += 1
-        elif raw.startswith("-"):
-            pass
-        elif raw.startswith("\\"):
+        elif raw.startswith("-") or raw.startswith("\\"):
             pass
         else:
             current_line += 1

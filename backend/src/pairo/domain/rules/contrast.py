@@ -29,7 +29,8 @@ def _srgb_to_linear(c: int) -> float:
 
 
 def relative_luminance(r: int, g: int, b: int) -> float:
-    return 0.2126 * _srgb_to_linear(r) + 0.7152 * _srgb_to_linear(g) + 0.0722 * _srgb_to_linear(b)
+    lr, lg, lb = _srgb_to_linear(r), _srgb_to_linear(g), _srgb_to_linear(b)
+    return 0.2126 * lr + 0.7152 * lg + 0.0722 * lb
 
 
 def contrast_ratio(hex1: str, hex2: str) -> float | None:
@@ -48,7 +49,7 @@ def _find_hex_after(pattern: re.Pattern[str], text: str) -> str | None:
     m = pattern.search(text)
     if not m:
         return None
-    rest = text[m.end():]
+    rest = text[m.end() :]
     hm = _HEX_COLOR.search(rest)
     return hm.group(0) if hm else None
 
@@ -70,8 +71,14 @@ def check_contrast(path: str, added_lines: list[AddedLine]) -> list[Finding]:
                     axis=Axis.A11Y,
                     file=path,
                     line=line.number,
-                    issue=f"Ratio de contraste insuffisant ({ratio:.1f}:1 < {_WCAG_AA_THRESHOLD}:1)",
-                    suggestion="Ajuster les couleurs pour atteindre un ratio d'au moins 4.5:1 (AA)",
+                    issue=(
+                        f"Ratio de contraste insuffisant"
+                        f" ({ratio:.1f}:1 < {_WCAG_AA_THRESHOLD}:1)"
+                    ),
+                    suggestion=(
+                        "Ajuster les couleurs pour atteindre"
+                        " un ratio d'au moins 4.5:1 (AA)"
+                    ),
                     source=Source.RULE,
                 )
             )

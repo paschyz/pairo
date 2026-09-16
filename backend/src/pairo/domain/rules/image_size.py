@@ -3,9 +3,7 @@ from pairo.domain.finding import Axis, Finding, Source
 _IMAGE_EXTENSIONS = (".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp", ".avif")
 
 
-def check_image_size(
-    path: str, *, size_kb: int, max_kb: int
-) -> list[Finding]:
+def check_image_size(path: str, *, size_kb: int, max_kb: int) -> list[Finding]:
     if not path.lower().endswith(_IMAGE_EXTENSIONS):
         return []
     if size_kb <= max_kb:
