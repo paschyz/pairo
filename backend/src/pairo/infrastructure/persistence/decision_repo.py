@@ -78,6 +78,23 @@ class SqlDecisionRepository:
 
         return await asyncio.to_thread(_query)
 
+    async def count_rejected_prs_by_category(
+        self, repo: str, category: str
+    ) -> int:
+        def _count() -> int:
+            stmt = (
+                select(FindingDecisionRow.pr_number)
+                .where(
+                    FindingDecisionRow.repo == repo,
+                    FindingDecisionRow.category == category,
+                    FindingDecisionRow.status == "rejected",
+                )
+                .distinct()
+            )
+            return len(self._session.execute(stmt).all())
+
+        return await asyncio.to_thread(_count)
+
 
 def _to_domain(row: FindingDecisionRow) -> FindingDecision:
     return FindingDecision(

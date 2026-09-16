@@ -41,3 +41,22 @@ def memory_summary_line(filtered_count: int) -> str:
         f"{filtered_count} {noun} déjà écartée{s}"
         f" sur cette PR n'{verb} pas été reposée{s}."
     )
+
+
+_SUGGEST_THRESHOLD = 3
+
+
+def suggest_persistent_rule(
+    qualified_category: str, rejected_pr_count: int
+) -> str:
+    """Suggest adding to .pairo.yml if a category is rejected often."""
+    if rejected_pr_count < _SUGGEST_THRESHOLD:
+        return ""
+    return (
+        f"Cette remarque (`{qualified_category}`) a été écartée"
+        f" sur {rejected_pr_count} PR. Pour ne plus la recevoir,"
+        f" ajoutez à `.pairo.yml` :\n"
+        f"```yaml\n"
+        f'ignore_categories: ["{qualified_category}"]\n'
+        f"```"
+    )

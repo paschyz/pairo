@@ -96,3 +96,7 @@ class DecisionRepository(Protocol):
     async def get_by_fingerprint(
         self, repo: str, pr_number: int, fingerprint: str
     ) -> FindingDecision | None: ...
+
+    async def count_rejected_prs_by_category(
+        self, repo: str, category: str
+    ) -> int: ...

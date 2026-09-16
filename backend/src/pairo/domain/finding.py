@@ -21,3 +21,4 @@ class Finding:
     issue: str
     suggestion: str
     source: Source
+    category: str = ""
