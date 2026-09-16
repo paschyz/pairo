@@ -137,7 +137,7 @@ h2 {
 
 .view-all {
   font-size: 0.85rem;
-  color: #7c6ef0;
+  color: #F28C38;
   text-decoration: none;
 }
 
@@ -189,7 +189,7 @@ h2 {
 }
 
 .review-repo {
-  color: #7c6ef0;
+  color: #F28C38;
   font-size: 0.85rem;
   font-weight: 500;
 }
@@ -214,8 +214,8 @@ h2 {
   font-size: 0.7rem;
   padding: 0.15rem 0.4rem;
   border-radius: 4px;
-  background: rgba(124, 110, 240, 0.15);
-  color: #7c6ef0;
+  background: rgba(242, 140, 56, 0.15);
+  color: #F28C38;
 }
 
 .review-time {

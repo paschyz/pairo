@@ -48,7 +48,7 @@ onMounted(() => store.fetchReview(Number(route.params.id)))
 
 .back-link {
   display: inline-block; margin-bottom: 1.5rem;
-  color: #7c6ef0; text-decoration: none; font-size: 0.85rem;
+  color: #F28C38; text-decoration: none; font-size: 0.85rem;
 }
 .back-link:hover { text-decoration: underline; }
 
@@ -61,7 +61,7 @@ h1 { font-size: 1.3rem; font-weight: 600; }
 }
 .model-badge {
   font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 4px;
-  background: rgba(124, 110, 240, 0.15); color: #7c6ef0;
+  background: rgba(242, 140, 56, 0.15); color: #F28C38;
 }
 
 h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; }
@@ -84,7 +84,7 @@ h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; }
 }
 .finding-axis {
   font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em;
-  color: #7c6ef0; font-weight: 600;
+  color: #F28C38; font-weight: 600;
 }
 .finding-file { font-size: 0.8rem; color: #8b8fa3; font-family: monospace; }
 

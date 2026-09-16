@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
+import logo from '@/assets/pairo.png'
 
 const route = useRoute()
 </script>
@@ -9,7 +10,7 @@ const route = useRoute()
     <nav class="sidebar">
       <div class="logo">
         <RouterLink to="/" class="logo-link">
-          <span class="logo-icon">◈</span>
+          <img :src="logo" alt="Pairo" class="logo-img" />
           <span class="logo-text">pairo</span>
         </RouterLink>
       </div>
@@ -72,9 +73,10 @@ body {
   color: inherit;
 }
 
-.logo-icon {
-  font-size: 1.4rem;
-  color: #7c6ef0;
+.logo-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
 }
 
 .logo-text {

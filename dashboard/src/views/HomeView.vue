@@ -110,7 +110,7 @@ h1 {
   display: inline-block;
   margin-top: 2rem;
   padding: 0.6rem 1.5rem;
-  background: #7c6ef0;
+  background: #F28C38;
   color: #fff;
   border-radius: 6px;
   text-decoration: none;
@@ -119,7 +119,7 @@ h1 {
 }
 
 .cta:hover {
-  background: #6b5ce0;
+  background: #D97A2E;
 }
 
 .grid {
