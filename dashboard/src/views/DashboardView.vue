@@ -1,17 +1,22 @@
 <script setup lang="ts">
-const stats = [
-  { label: 'Reviews Today', value: '12', trend: '+3' },
-  { label: 'Open PRs', value: '7', trend: '-2' },
-  { label: 'Avg Response', value: '4m', trend: '-12s' },
-  { label: 'Repos Connected', value: '3', trend: '' },
-]
+import { onMounted } from 'vue'
+import { useReviewStore } from '@/stores/reviews'
 
-const recentReviews = [
-  { repo: 'acme/api', pr: '#342', title: 'Add rate limiting middleware', status: 'completed', time: '2m ago' },
-  { repo: 'acme/web', pr: '#189', title: 'Fix auth redirect loop', status: 'completed', time: '8m ago' },
-  { repo: 'acme/api', pr: '#341', title: 'Migrate user schema v3', status: 'in-progress', time: '12m ago' },
-  { repo: 'acme/shared', pr: '#57', title: 'Update eslint config', status: 'queued', time: '15m ago' },
-]
+const store = useReviewStore()
+
+onMounted(async () => {
+  await Promise.all([store.fetchStats(), store.fetchReviews(0, 5)])
+})
+
+function timeAgo(dateStr: string | null): string {
+  if (!dateStr) return ''
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  return `${Math.floor(hours / 24)}d ago`
+}
 </script>
 
 <template>
@@ -22,27 +27,48 @@ const recentReviews = [
     </header>
 
     <div class="stats-grid">
-      <div v-for="stat in stats" :key="stat.label" class="stat-card">
-        <span class="stat-label">{{ stat.label }}</span>
-        <span class="stat-value">{{ stat.value }}</span>
-        <span v-if="stat.trend" class="stat-trend">{{ stat.trend }}</span>
+      <div class="stat-card">
+        <span class="stat-label">Total Reviews</span>
+        <span class="stat-value">{{ store.stats.total_reviews }}</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Total Findings</span>
+        <span class="stat-value">{{ store.stats.total_findings }}</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Input Tokens</span>
+        <span class="stat-value">{{ store.stats.total_input_tokens.toLocaleString() }}</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">Output Tokens</span>
+        <span class="stat-value">{{ store.stats.total_output_tokens.toLocaleString() }}</span>
       </div>
     </div>
 
     <section class="recent">
-      <h2>Recent Reviews</h2>
-      <div class="review-list">
-        <div v-for="review in recentReviews" :key="review.pr" class="review-row">
+      <div class="section-header">
+        <h2>Recent Reviews</h2>
+        <RouterLink to="/reviews" class="view-all">View all</RouterLink>
+      </div>
+      <div v-if="store.loading" class="empty">Loading...</div>
+      <div v-else-if="store.reviews.length === 0" class="empty">No reviews yet</div>
+      <div v-else class="review-list">
+        <RouterLink
+          v-for="review in store.reviews"
+          :key="review.id"
+          :to="`/reviews/${review.id}`"
+          class="review-row"
+        >
           <div class="review-info">
-            <span class="review-repo">{{ review.repo }}</span>
-            <span class="review-pr">{{ review.pr }}</span>
-            <span class="review-title">{{ review.title }}</span>
+            <span class="review-repo">{{ review.owner }}/{{ review.repo }}</span>
+            <span class="review-pr">#{{ review.pr_number }}</span>
+            <span class="review-findings">{{ review.total_findings }} findings</span>
           </div>
           <div class="review-meta">
-            <span :class="['status-badge', review.status]">{{ review.status }}</span>
-            <span class="review-time">{{ review.time }}</span>
+            <span v-if="review.model" class="model-badge">{{ review.model }}</span>
+            <span class="review-time">{{ timeAgo(review.created_at) }}</span>
           </div>
-        </div>
+        </RouterLink>
       </div>
     </section>
   </div>
@@ -97,15 +123,35 @@ h1 {
   font-weight: 700;
 }
 
-.stat-trend {
-  font-size: 0.8rem;
-  color: #4ade80;
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
 }
 
 h2 {
   font-size: 1.1rem;
   font-weight: 600;
-  margin-bottom: 1rem;
+}
+
+.view-all {
+  font-size: 0.85rem;
+  color: #7c6ef0;
+  text-decoration: none;
+}
+
+.view-all:hover {
+  text-decoration: underline;
+}
+
+.empty {
+  color: #8b8fa3;
+  padding: 2rem;
+  text-align: center;
+  background: #161821;
+  border: 1px solid #2a2d3a;
+  border-radius: 8px;
 }
 
 .review-list {
@@ -123,10 +169,17 @@ h2 {
   padding: 0.85rem 1rem;
   background: #161821;
   border-bottom: 1px solid #2a2d3a;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.15s;
 }
 
 .review-row:last-child {
   border-bottom: none;
+}
+
+.review-row:hover {
+  background: #1e2030;
 }
 
 .review-info {
@@ -146,8 +199,9 @@ h2 {
   font-size: 0.85rem;
 }
 
-.review-title {
-  font-size: 0.9rem;
+.review-findings {
+  font-size: 0.85rem;
+  color: #e1e4e8;
 }
 
 .review-meta {
@@ -156,26 +210,12 @@ h2 {
   gap: 0.75rem;
 }
 
-.status-badge {
-  font-size: 0.75rem;
-  padding: 0.2rem 0.5rem;
+.model-badge {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
   border-radius: 4px;
-  text-transform: capitalize;
-}
-
-.status-badge.completed {
-  background: rgba(74, 222, 128, 0.15);
-  color: #4ade80;
-}
-
-.status-badge.in-progress {
-  background: rgba(251, 191, 36, 0.15);
-  color: #fbbf24;
-}
-
-.status-badge.queued {
-  background: rgba(139, 143, 163, 0.15);
-  color: #8b8fa3;
+  background: rgba(124, 110, 240, 0.15);
+  color: #7c6ef0;
 }
 
 .review-time {

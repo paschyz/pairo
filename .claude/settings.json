@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(rustup update *)",
-      "Bash(git commit -m ' *)"
-    ]
-  }
-}

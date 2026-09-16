@@ -15,3 +15,6 @@ htmlcov/
 *.pem
 *.egg-info/
 *.db
+
+# Claude
+.claude/settings.json

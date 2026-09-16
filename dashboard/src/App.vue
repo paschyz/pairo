@@ -16,7 +16,7 @@ const route = useRoute()
       <ul class="nav-links">
         <li><RouterLink to="/dashboard" class="nav-link">Dashboard</RouterLink></li>
         <li><a class="nav-link disabled">Repositories</a></li>
-        <li><a class="nav-link disabled">Reviews</a></li>
+        <li><RouterLink to="/reviews" class="nav-link">Reviews</RouterLink></li>
         <li><a class="nav-link disabled">Settings</a></li>
       </ul>
     </nav>
