@@ -6,17 +6,14 @@ import yaml
 
 logger = logging.getLogger(__name__)
 
-_DEFAULTS = {
-    "axes": ["crafts", "eco", "a11y"],
-    "max_image_kb": 200,
-    "ignore": [],
-    "language": "fr",
-}
+_DEFAULT_AXES = ["crafts", "eco", "a11y"]
+_DEFAULT_MAX_IMAGE_KB = 200
+_DEFAULT_LANGUAGE = "fr"
 
 
 @dataclass
 class RepoConfig:
-    axes: list[str] = field(default_factory=lambda: list(_DEFAULTS["axes"]))  # type: ignore[arg-type]
+    axes: list[str] = field(default_factory=lambda: list(_DEFAULT_AXES))
     max_image_kb: int = 200
     ignore: list[str] = field(default_factory=list)
     language: str = "fr"
@@ -36,8 +33,8 @@ def parse_repo_config(raw: str | None) -> RepoConfig:
     if not isinstance(data, dict):
         return RepoConfig()
     return RepoConfig(
-        axes=data.get("axes", _DEFAULTS["axes"]),
-        max_image_kb=data.get("max_image_kb", _DEFAULTS["max_image_kb"]),
-        ignore=data.get("ignore", _DEFAULTS["ignore"]),
-        language=data.get("language", _DEFAULTS["language"]),
+        axes=data.get("axes", _DEFAULT_AXES),
+        max_image_kb=data.get("max_image_kb", _DEFAULT_MAX_IMAGE_KB),
+        ignore=data.get("ignore", []),
+        language=data.get("language", _DEFAULT_LANGUAGE),
     )
