@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     daily_review_quota: int = 50
     dashboard_origin: str = "http://localhost:3000"
     smee_url: str = ""
+    llm_cache_ttl_days: int = 30
 
 
 settings = Settings()

@@ -1,6 +1,9 @@
 from pairo.domain.finding import Finding
 from pairo.domain.ports import FileDiff
 
+# Increment when prompts change to invalidate cache
+PROMPT_VERSION = "1"
+
 _AXIS_DESCRIPTIONS = {
     "crafts": "nommage, fonctions longues, duplication, code mort, lisibilité",
     "eco": "requêtes N+1, absence de pagination, dépendances lourdes, calculs inutiles",

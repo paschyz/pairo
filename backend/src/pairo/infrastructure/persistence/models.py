@@ -81,3 +81,20 @@ class FindingDecisionRow(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now(), nullable=False,
     )
+
+
+class LlmCacheRow(Base):
+    __tablename__ = "llm_cache"
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True,
+    )
+    cache_key: Mapped[str] = mapped_column(
+        String(64), unique=True, nullable=False, index=True,
+    )
+    findings_json: Mapped[str] = mapped_column(Text, nullable=False)
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, server_default=func.now(), nullable=False,
+    )
