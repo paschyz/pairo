@@ -72,6 +72,7 @@ def _format_review_body(review: Review) -> str:
 
 class GitHubClient:
     def __init__(self, token: str) -> None:
+        self._token = token
         self._headers = {
             "Authorization": f"token {token}",
             "Accept": "application/vnd.github+json",
@@ -160,3 +161,96 @@ class GitHubClient:
                 json=payload,
             )
             resp.raise_for_status()
+
+    async def get_comment(
+        self, owner: str, repo: str, comment_id: int
+    ) -> dict[str, Any]:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{GITHUB_API}/repos/{owner}/{repo}/pulls/comments/{comment_id}",
+                headers=self._headers,
+            )
+            resp.raise_for_status()
+        return resp.json()  # type: ignore[no-any-return]
+
+    async def reply_to_comment(
+        self, owner: str, repo: str, pr_number: int, comment_id: int, body: str
+    ) -> None:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{GITHUB_API}/repos/{owner}/{repo}/pulls/{pr_number}/comments",
+                headers=self._headers,
+                json={"body": body, "in_reply_to": comment_id},
+            )
+            resp.raise_for_status()
+
+    async def get_comment_reactions(
+        self, owner: str, repo: str, comment_id: int
+    ) -> list[str]:
+        async with httpx.AsyncClient() as client:
+            resp = await client.get(
+                f"{GITHUB_API}/repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions",
+                headers={**self._headers, "Accept": "application/vnd.github+json"},
+            )
+            resp.raise_for_status()
+        return [r["content"] for r in resp.json()]
+
+    async def get_review_threads(
+        self, owner: str, repo: str, pr_number: int
+    ) -> list[dict[str, Any]]:
+        """Fetch review threads via GraphQL to get isResolved status."""
+        query = """
+        query($owner: String!, $repo: String!, $pr: Int!, $cursor: String) {
+          repository(owner: $owner, name: $repo) {
+            pullRequest(number: $pr) {
+              reviewThreads(first: 100, after: $cursor) {
+                nodes {
+                  isResolved
+                  comments(first: 1) {
+                    nodes { id databaseId body }
+                  }
+                }
+                pageInfo { hasNextPage endCursor }
+              }
+            }
+          }
+        }
+        """
+        threads: list[dict[str, Any]] = []
+        cursor: str | None = None
+
+        async with httpx.AsyncClient() as client:
+            while True:
+                resp = await client.post(
+                    "https://api.github.com/graphql",
+                    headers={
+                        "Authorization": f"bearer {self._token}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "query": query,
+                        "variables": {
+                            "owner": owner, "repo": repo,
+                            "pr": pr_number, "cursor": cursor,
+                        },
+                    },
+                )
+                resp.raise_for_status()
+                data = resp.json()["data"]["repository"]["pullRequest"]["reviewThreads"]
+                for node in data["nodes"]:
+                    first = (
+                        node["comments"]["nodes"][0]
+                        if node["comments"]["nodes"]
+                        else None
+                    )
+                    if first:
+                        threads.append({
+                            "is_resolved": node["isResolved"],
+                            "comment_id": first["databaseId"],
+                            "body": first["body"],
+                        })
+                if not data["pageInfo"]["hasNextPage"]:
+                    break
+                cursor = data["pageInfo"]["endCursor"]
+
+        return threads

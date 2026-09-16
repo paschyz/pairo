@@ -42,6 +42,22 @@ class CodeHost(Protocol):
         self, owner: str, repo: str, path: str, ref: str
     ) -> str | None: ...
 
+    async def get_comment(
+        self, owner: str, repo: str, comment_id: int
+    ) -> dict[str, object]: ...
+
+    async def reply_to_comment(
+        self, owner: str, repo: str, pr_number: int, comment_id: int, body: str
+    ) -> None: ...
+
+    async def get_comment_reactions(
+        self, owner: str, repo: str, comment_id: int
+    ) -> list[str]: ...
+
+    async def get_review_threads(
+        self, owner: str, repo: str, pr_number: int
+    ) -> list[dict[str, object]]: ...
+
 
 class LLMReviewer(Protocol):
     last_input_tokens: int

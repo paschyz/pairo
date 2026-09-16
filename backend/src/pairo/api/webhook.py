@@ -7,9 +7,13 @@ from fastapi import APIRouter, BackgroundTasks, Request, Response
 
 from pairo.application.review_pull_request import ReviewPullRequest
 from pairo.config import settings
+from pairo.domain.command import parse_command
+from pairo.domain.decision import DecisionSignal, DecisionStatus, FindingDecision
+from pairo.domain.marker import parse_marker
 from pairo.infrastructure.github.auth import GitHubAppAuth
 from pairo.infrastructure.github.client import GitHubClient
 from pairo.infrastructure.llm.factory import create_reviewer
+from pairo.infrastructure.persistence.decision_repo import SqlDecisionRepository
 from pairo.infrastructure.persistence.engine import get_session
 from pairo.infrastructure.persistence.repository import SqlReviewRepository
 
@@ -93,6 +97,82 @@ async def _run_review(payload: dict[str, Any], delivery_id: str) -> None:
             session.close()
 
 
+async def _handle_comment(payload: dict[str, Any]) -> None:
+    """Process @pairo command from a review comment reply."""
+    comment = payload["comment"]
+    repo_full = payload["repository"]["full_name"]
+    pr_number = payload["pull_request"]["number"]
+    user = comment["user"]["login"]
+    parent_id = comment.get("in_reply_to_id")
+
+    cmd = parse_command(comment["body"])
+    if cmd is None or parent_id is None:
+        return
+
+    try:
+        installation_id = payload["installation"]["id"]
+        auth = GitHubAppAuth(settings.github_app_id, _load_private_key())
+        token = await auth.get_installation_token(installation_id)
+        code_host = GitHubClient(token)
+        owner, repo = repo_full.split("/")
+
+        # Fetch the parent comment to get its marker
+        parent = await code_host.get_comment(owner, repo, parent_id)
+        marker = parse_marker(parent.get("body", ""))
+        if marker is None:
+            return  # Not a Pairo comment
+
+        session = get_session()
+        try:
+            decision_repo = SqlDecisionRepository(session)
+
+            if cmd.action == "ignore":
+                decision = FindingDecision(
+                    repo=repo_full,
+                    pr_number=pr_number,
+                    fingerprint=marker["fp"],
+                    axis=marker["axis"],
+                    category=marker["cat"],
+                    status=DecisionStatus.REJECTED,
+                    signal=DecisionSignal.COMMAND,
+                    reason=cmd.reason,
+                    decided_by=user,
+                    github_comment_id=parent_id,
+                )
+                await decision_repo.save(decision)
+                await code_host.reply_to_comment(
+                    owner, repo, pr_number, comment["id"],
+                    "\U0001f44d Noté, je ne reposerai pas cette remarque sur cette PR.",
+                )
+            elif cmd.action == "valid":
+                existing = await decision_repo.get_by_fingerprint(
+                    repo_full, pr_number, marker["fp"]
+                )
+                if existing and existing.status == DecisionStatus.REJECTED:
+                    decision = FindingDecision(
+                        repo=repo_full,
+                        pr_number=pr_number,
+                        fingerprint=marker["fp"],
+                        axis=marker["axis"],
+                        category=marker["cat"],
+                        status=DecisionStatus.ACCEPTED,
+                        signal=DecisionSignal.COMMAND,
+                        decided_by=user,
+                        github_comment_id=parent_id,
+                    )
+                    await decision_repo.save(decision)
+                    await code_host.reply_to_comment(
+                        owner, repo, pr_number, comment["id"],
+                        "\U0001f44d Remarque réactivée.",
+                    )
+        finally:
+            session.close()
+
+        logger.info("Command %s processed for %s#%s", cmd.action, repo_full, pr_number)
+    except Exception:
+        logger.exception("Comment command failed for %s#%s", repo_full, pr_number)
+
+
 @router.post("/webhook", status_code=202, response_model=None)
 async def webhook(
     request: Request, background_tasks: BackgroundTasks
@@ -107,13 +187,24 @@ async def webhook(
             media_type="application/json",
         )
 
-    event = request.headers.get("X-GitHub-Event", "")
-    if event != "pull_request":
-        return _ignored(f"Ignored event: {event}")
-
     import json
 
+    event = request.headers.get("X-GitHub-Event", "")
     payload = json.loads(body)
+
+    if event == "pull_request_review_comment":
+        action = payload.get("action", "")
+        if action != "created":
+            return _ignored(f"Ignored comment action: {action}")
+        comment = payload.get("comment", {})
+        cmd = parse_command(comment.get("body", ""))
+        if cmd is None or not comment.get("in_reply_to_id"):
+            return _ignored("No command in comment")
+        background_tasks.add_task(_handle_comment, payload)
+        return {"detail": "Command queued"}
+
+    if event != "pull_request":
+        return _ignored(f"Ignored event: {event}")
 
     action = payload.get("action", "")
     if action not in _HANDLED_ACTIONS:
