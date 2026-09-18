@@ -17,7 +17,7 @@ class RepoConfig:
     max_image_kb: int = 200
     ignore: list[str] = field(default_factory=list)
     ignore_categories: list[str] = field(default_factory=list)
-    language: str = "fr"
+    language: str = "en"
     memory_enabled: bool = True
     memory_classify_replies: bool = False
     parse_error: str | None = None
