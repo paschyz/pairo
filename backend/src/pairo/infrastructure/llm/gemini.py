@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 from typing import Any
@@ -10,6 +11,7 @@ from pairo.infrastructure.llm.rate_limiter import RateLimiter
 logger = logging.getLogger(__name__)
 
 _VALID_AXES = {a.value for a in Axis}
+_FALLBACK_MODELS = ["gemini-3.5-flash", "gemini-3.6-flash"]
 
 
 def _parse_findings(text: str) -> list[Finding]:
@@ -62,20 +64,25 @@ class GeminiReviewer:
         language: str,
     ) -> list[Finding]:
         prompt = build_prompt(files, existing_findings, axes, language)
-        try:
-            await self._rate_limiter.acquire()
-            response = await self._client.aio.models.generate_content(
-                model=self._model,
-                contents=prompt,
-                config={"response_mime_type": "application/json"},
-            )
-            self.last_input_tokens = (
-                response.usage_metadata.prompt_token_count or 0
-            )
-            self.last_output_tokens = (
-                response.usage_metadata.candidates_token_count or 0
-            )
-            return _parse_findings(response.text)
-        except Exception:
-            logger.exception("Gemini API call failed")
-            return []
+        models = [self._model] + [m for m in _FALLBACK_MODELS if m != self._model]
+        for model in models:
+            try:
+                await self._rate_limiter.acquire()
+                response = await self._client.aio.models.generate_content(
+                    model=model,
+                    contents=prompt,
+                    config={"response_mime_type": "application/json"},
+                )
+                self.last_input_tokens = (
+                    response.usage_metadata.prompt_token_count or 0
+                )
+                self.last_output_tokens = (
+                    response.usage_metadata.candidates_token_count or 0
+                )
+                self.model_name = model
+                return _parse_findings(response.text)
+            except Exception:
+                logger.warning("Gemini model %s failed, trying next", model)
+                await asyncio.sleep(1)
+        logger.exception("All Gemini models failed")
+        return []
