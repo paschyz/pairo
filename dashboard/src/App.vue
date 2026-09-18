@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { useRoute } from 'vue-router'
+import { Analytics } from '@vercel/analytics/vue'
 import logo from '@/assets/pairo.png'
 
 const route = useRoute()
 </script>
 
 <template>
+  <Analytics />
   <div v-if="route.meta.layout === 'dashboard'" class="app">
     <nav class="sidebar">
       <div class="logo">
