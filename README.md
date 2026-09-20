@@ -1,4 +1,3 @@
-<br>
 
 <div align="center">
 
@@ -62,18 +61,10 @@ Pairo is different:
 
 Pairo posts inline comments with categorized findings on every pull request:
 
-```
-🔍 pairo review — 3 findings
-
-  ⚠️ [security.input-validation] src/api/handler.py:42
-  User input passed directly to SQL query without sanitization.
-
-  💡 [crafts.naming] src/utils/helpers.py:15
-  Function `do_thing` could be more descriptive.
-
-  🔧 [perf.n-plus-one] src/models/user.py:78
-  Query inside loop — consider eager loading.
-```
+<img width="1250" height="819" alt="image" src="https://github.com/user-attachments/assets/647aa160-a430-4c0a-8b11-528c3431fffe" />
+<img width="770" height="310" alt="image" src="https://github.com/user-attachments/assets/7e658376-2630-4cb3-a449-78e5d4218567" />
+<img width="768" height="308" alt="image" src="https://github.com/user-attachments/assets/e0452e91-1e90-45d4-9d91-e9866fea58db" />
+<img width="769" height="308" alt="image" src="https://github.com/user-attachments/assets/e38c1c78-f151-472e-98d8-b30b816017dd" />
 
 ### Feedback Loop
 
