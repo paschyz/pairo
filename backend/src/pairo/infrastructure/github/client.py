@@ -61,9 +61,6 @@ def _format_review_body(review: Review) -> str:
         emoji = _AXIS_EMOJI.get(axis, "")
         lines.append(f"- {emoji} {axis} : {count} finding(s)")
 
-    if review.model:
-        lines.append(f"\n📊 Modèle : {review.model}")
-        lines.append(f"Tokens : {review.input_tokens} in / {review.output_tokens} out")
     if review.co2_g is not None:
         lines.append(f"🌍 CO₂ estimé : {review.co2_g:.4f} g")
     if review.memory_summary:
