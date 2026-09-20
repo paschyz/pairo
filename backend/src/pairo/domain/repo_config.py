@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 _DEFAULT_AXES = ["crafts", "eco", "a11y"]
 _DEFAULT_MAX_IMAGE_KB = 200
-_DEFAULT_LANGUAGE = "fr"
+_DEFAULT_LANGUAGE = "en"
 
 
 @dataclass
