@@ -142,27 +142,29 @@ onMounted(() => {
           before they reach production — so you can ship with confidence.
         </p>
         <div class="cta-row">
-          <a
-            href="https://github.com/paschyz/pairo"
-            target="_blank"
-            rel="noopener"
-            class="btn-primary"
-          >
-            Get started free
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-              stroke-linecap="round"
-              stroke-linejoin="round"
+          <div class="btn-primary-wrap">
+            <a
+              href="https://github.com/paschyz/pairo"
+              target="_blank"
+              rel="noopener"
+              class="btn-primary"
             >
-              <line x1="5" y1="12" x2="19" y2="12" />
-              <polyline points="12 5 19 12 12 19" />
-            </svg>
-          </a>
+              Try it for free
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" />
+              </svg>
+            </a>
+          </div>
           <a href="#" class="btn-secondary">
             <svg
               class="play-icon"
@@ -173,7 +175,7 @@ onMounted(() => {
             >
               <polygon points="5,3 19,12 5,21" />
             </svg>
-            See how it works
+            Demo
           </a>
         </div>
       </div>
@@ -457,7 +459,7 @@ onMounted(() => {
   background: var(--bg);
   color: var(--text);
   font-family:
-    "Inter",
+    "Space Grotesk",
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
@@ -555,29 +557,53 @@ onMounted(() => {
 }
 
 .nav-cta {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 22px;
-  background: linear-gradient(180deg, #FF984F 0%, #FF7528 100%);
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #ff984f 0%, #ff6b1a 50%, #ff8534 100%);
   color: #fff;
   font-size: 14px;
   font-weight: 600;
-  border-radius: 8px;
+  border-radius: 10px;
   text-decoration: none;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.18);
   box-shadow:
-    0 8px 30px var(--orange-glow),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  transition: all 0.2s ease;
+    0 0 0 1px rgba(255, 117, 40, 0.3),
+    0 8px 24px var(--orange-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+}
+
+.nav-cta::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.15) 0%,
+    transparent 50%
+  );
+  border-radius: inherit;
+  pointer-events: none;
 }
 
 .nav-cta:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px) scale(1.02);
   box-shadow:
-    0 12px 40px rgba(255, 122, 50, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  filter: brightness(1.08);
+    0 0 0 1px rgba(255, 117, 40, 0.4),
+    0 14px 40px rgba(255, 122, 50, 0.45),
+    0 4px 12px rgba(255, 122, 50, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  filter: brightness(1.1);
+}
+
+.nav-cta:active {
+  transform: translateY(0) scale(0.98);
+  filter: brightness(0.95);
+  transition-duration: 0.1s;
 }
 
 .nav-mobile-toggle {
@@ -671,7 +697,7 @@ onMounted(() => {
 }
 
 .trust-dot::after {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   border-radius: 50%;
@@ -680,8 +706,14 @@ onMounted(() => {
 }
 
 @keyframes dotExpand {
-  0% { transform: scale(1); opacity: 0.6; }
-  100% { transform: scale(3); opacity: 0; }
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(3);
+    opacity: 0;
+  }
 }
 
 .hero-title {
@@ -694,10 +726,17 @@ onMounted(() => {
 }
 
 .gradient-text {
-  background: linear-gradient(90deg, #ff873d, #ffa060);
+  background: linear-gradient(90deg, #e05500, #ffcc66, #e05500, #ffcc66, #e05500);
+  background-size: 200% 100%;
+  animation: gradient-cycle 3s ease infinite;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+@keyframes gradient-cycle {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
 }
 
 .hero-subtitle {
@@ -719,69 +758,164 @@ onMounted(() => {
   margin-top: 36px;
 }
 
+.btn-primary-wrap {
+  position: relative;
+  border-radius: 12px;
+  padding: 2px;
+  overflow: hidden;
+}
+
+.btn-primary-wrap::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 300%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    transparent 44%,
+    rgba(255, 220, 170, 0.7) 48%,
+    #fff 50%,
+    rgba(255, 220, 170, 0.7) 52%,
+    transparent 56%,
+    transparent 100%
+  );
+  animation: borderSpin 2.5s linear infinite;
+}
+
+@keyframes borderSpin {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
 .btn-primary {
+  position: relative;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  height: 50px;
-  padding: 0 32px;
-  background: linear-gradient(180deg, #FF984F 0%, #FF7528 100%);
+  height: 52px;
+  padding: 0 34px;
+  background: linear-gradient(135deg, #ff984f 0%, #ff6b1a 50%, #ff8534 100%);
   color: #fff;
   font-size: 15px;
   font-weight: 600;
   letter-spacing: -0.01em;
-  border-radius: 8px;
+  border-radius: 10.5px;
   text-decoration: none;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: none;
   box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.3),
-    0 8px 30px var(--orange-glow),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  transition: all 0.2s ease;
+    0 8px 24px var(--orange-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+}
+
+.btn-primary::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.15) 0%,
+    transparent 50%
+  );
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.btn-primary::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 60%
+  );
+  opacity: 0;
+  transform: scale(0.5);
+  transition:
+    opacity 0.3s,
+    transform 0.3s;
+  pointer-events: none;
+}
+
+.btn-primary:hover::after {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .btn-primary:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px) scale(1.02);
   box-shadow:
+    0 0 0 1px rgba(255, 117, 40, 0.4),
     0 2px 4px rgba(0, 0, 0, 0.3),
-    0 14px 40px rgba(255, 122, 50, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  filter: brightness(1.08);
+    0 16px 48px rgba(255, 122, 50, 0.45),
+    0 4px 12px rgba(255, 122, 50, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  filter: brightness(1.1);
 }
 
 .btn-primary:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.98);
   filter: brightness(0.95);
+  transition-duration: 0.1s;
 }
 
 .btn-secondary {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  height: 50px;
-  padding: 0 32px;
+  height: 52px;
+  padding: 0 34px;
   background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   color: var(--text);
   font-size: 15px;
   font-weight: 500;
   letter-spacing: -0.01em;
-  border-radius: 8px;
+  border-radius: 10px;
   text-decoration: none;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-  transition: all 0.2s ease;
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+}
+
+.btn-secondary::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, transparent 50%);
+  border-radius: inherit;
+  pointer-events: none;
 }
 
 .btn-secondary:hover {
   background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.18);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    0 12px 32px rgba(0, 0, 0, 0.25),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transform: translateY(-3px) scale(1.02);
+  filter: brightness(1.1);
 }
 
 .btn-secondary:active {
-  transform: translateY(0);
-  background: rgba(255, 255, 255, 0.03);
+  transform: translateY(0) scale(0.98);
+  filter: brightness(0.95);
+  transition-duration: 0.1s;
 }
 
 .play-icon {
@@ -1389,13 +1523,19 @@ kbd {
 }
 
 .loaded .card-impact {
-  animation: cardEnter 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.45s forwards,
-             cardFloatD 6.5s ease-in-out 1.3s infinite;
+  animation:
+    cardEnter 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.45s forwards,
+    cardFloatD 6.5s ease-in-out 1.3s infinite;
 }
 
 @keyframes cardFloatD {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
 }
 
 .impact-period {
