@@ -1,16 +1,17 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import logo from '@/assets/pairo.png'
+import { ref, onMounted } from "vue";
+import logo from "@/assets/pairo.png";
 
-const loaded = ref(false)
+const loaded = ref(false);
 onMounted(() => {
-  requestAnimationFrame(() => { loaded.value = true })
-})
+  requestAnimationFrame(() => {
+    loaded.value = true;
+  });
+});
 </script>
 
 <template>
   <div class="landing" :class="{ loaded }">
-
     <!-- ===== Navbar ===== -->
     <nav class="navbar">
       <div class="nav-container">
@@ -19,21 +20,83 @@ onMounted(() => {
           <span class="nav-logo-text">Pairo</span>
         </a>
         <div class="landing-nav-links">
-          <a href="#" class="landing-nav-link">Product <svg class="chevron" width="10" height="10" viewBox="0 0 10 10"><path d="M2.5 3.5L5 6l2.5-2.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
-          <a href="#" class="landing-nav-link">Solutions <svg class="chevron" width="10" height="10" viewBox="0 0 10 10"><path d="M2.5 3.5L5 6l2.5-2.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          <a href="#" class="landing-nav-link"
+            >Product
+            <svg class="chevron" width="10" height="10" viewBox="0 0 10 10">
+              <path
+                d="M2.5 3.5L5 6l2.5-2.5"
+                stroke="currentColor"
+                stroke-width="1.5"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              /></svg
+          ></a>
+          <a href="#" class="landing-nav-link"
+            >Solutions
+            <svg class="chevron" width="10" height="10" viewBox="0 0 10 10">
+              <path
+                d="M2.5 3.5L5 6l2.5-2.5"
+                stroke="currentColor"
+                stroke-width="1.5"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              /></svg
+          ></a>
           <a href="#" class="landing-nav-link">Pricing</a>
           <a href="#" class="landing-nav-link">Docs</a>
-          <a href="#" class="landing-nav-link">Company <svg class="chevron" width="10" height="10" viewBox="0 0 10 10"><path d="M2.5 3.5L5 6l2.5-2.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+          <a href="#" class="landing-nav-link"
+            >Company
+            <svg class="chevron" width="10" height="10" viewBox="0 0 10 10">
+              <path
+                d="M2.5 3.5L5 6l2.5-2.5"
+                stroke="currentColor"
+                stroke-width="1.5"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              /></svg
+          ></a>
         </div>
         <div class="nav-actions">
           <a href="#" class="nav-signin">Sign in</a>
-          <a href="https://github.com/paschyz/pairo" target="_blank" rel="noopener" class="nav-cta">
+          <a
+            href="https://github.com/paschyz/pairo"
+            target="_blank"
+            rel="noopener"
+            class="nav-cta"
+          >
             Get started
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
           </a>
         </div>
         <button class="nav-mobile-toggle" aria-label="Menu">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+          >
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
         </button>
       </div>
     </nav>
@@ -46,25 +109,70 @@ onMounted(() => {
 
       <!-- Hero text content -->
       <div class="hero-text">
-        <span class="trust-badge">
+        <a
+          href="https://github.com/paschyz/pairo"
+          target="_blank"
+          rel="noopener"
+          class="trust-badge"
+        >
           <span class="trust-dot"></span>
-          TRUSTED BY MODERN ENGINEERING TEAMS
-        </span>
+          LIVE ON GITHUB
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="5" y1="12" x2="19" y2="12" />
+            <polyline points="12 5 19 12 12 19" />
+          </svg>
+        </a>
         <h1 class="hero-title">
           AI code reviews<br />
           <span class="gradient-text">that actually help</span>
         </h1>
         <p class="hero-subtitle">
-          Pairo catches bugs, security issues, and bad patterns<br class="desktop-br" />
+          Pairo catches bugs, security issues, and bad patterns<br
+            class="desktop-br"
+          />
           before they reach production — so you can ship with confidence.
         </p>
         <div class="cta-row">
-          <a href="https://github.com/paschyz/pairo" target="_blank" rel="noopener" class="btn-primary">
+          <a
+            href="https://github.com/paschyz/pairo"
+            target="_blank"
+            rel="noopener"
+            class="btn-primary"
+          >
             Get started free
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" />
+            </svg>
           </a>
           <a href="#" class="btn-secondary">
-            <svg class="play-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+            <svg
+              class="play-icon"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <polygon points="5,3 19,12 5,21" />
+            </svg>
             See how it works
           </a>
         </div>
@@ -81,7 +189,20 @@ onMounted(() => {
       <div class="handwritten">
         <span>Better</span><br />
         <span>code together</span>
-        <svg class="hw-arrow" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="19" x2="19" y2="5"/><polyline points="9 5 19 5 19 15"/></svg>
+        <svg
+          class="hw-arrow"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <line x1="5" y1="19" x2="19" y2="5" />
+          <polyline points="9 5 19 5 19 15" />
+        </svg>
       </div>
 
       <!-- Decorative code brackets -->
@@ -97,10 +218,21 @@ onMounted(() => {
       <!-- PR Review Card -->
       <div class="float-card card-pr">
         <div class="fc-header">
-          <svg width="20" height="20" viewBox="0 0 16 16" fill="#8b949e"><path d="M7.177 3.073L9.573.677A.25.25 0 0110 .854v4.792a.25.25 0 01-.427.177L7.177 3.427a.25.25 0 010-.354zM3.75 2.5a.75.75 0 100 1.5.75.75 0 000-1.5zm-2.25.75a2.25 2.25 0 113 2.122v5.256a2.251 2.251 0 11-1.5 0V5.372A2.25 2.25 0 011.5 3.25zM11 2.5h-1V4h1a1 1 0 011 1v5.628a2.251 2.251 0 101.5 0V5A2.5 2.5 0 0011 2.5zm1 10.25a.75.75 0 111.5 0 .75.75 0 01-1.5 0zM3.75 12a.75.75 0 100 1.5.75.75 0 000-1.5z"/></svg>
+          <svg width="20" height="20" viewBox="0 0 16 16" fill="#8b949e">
+            <path
+              d="M7.177 3.073L9.573.677A.25.25 0 0110 .854v4.792a.25.25 0 01-.427.177L7.177 3.427a.25.25 0 010-.354zM3.75 2.5a.75.75 0 100 1.5.75.75 0 000-1.5zm-2.25.75a2.25 2.25 0 113 2.122v5.256a2.251 2.251 0 11-1.5 0V5.372A2.25 2.25 0 011.5 3.25zM11 2.5h-1V4h1a1 1 0 011 1v5.628a2.251 2.251 0 101.5 0V5A2.5 2.5 0 0011 2.5zm1 10.25a.75.75 0 111.5 0 .75.75 0 01-1.5 0zM3.75 12a.75.75 0 100 1.5.75.75 0 000-1.5z"
+            />
+          </svg>
           <span class="fc-title">Pull Request Review</span>
           <span class="badge-open">
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 2v6M2 5h6" stroke="#38D996" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+              <path
+                d="M5 2v6M2 5h6"
+                stroke="#38D996"
+                stroke-width="1.5"
+                stroke-linecap="round"
+              />
+            </svg>
             Open
           </span>
         </div>
@@ -122,11 +254,31 @@ onMounted(() => {
             </div>
           </div>
           <div class="pr-findings">
-            <div class="pr-finding"><span class="dot dot-danger"></span> 1 potential bug</div>
-            <div class="pr-finding"><span class="dot dot-warning"></span> 1 security suggestion</div>
-            <div class="pr-finding"><span class="dot dot-info"></span> 2 code improvements</div>
+            <div class="pr-finding">
+              <span class="dot dot-danger"></span> 1 potential bug
+            </div>
+            <div class="pr-finding">
+              <span class="dot dot-warning"></span> 1 security suggestion
+            </div>
+            <div class="pr-finding">
+              <span class="dot dot-info"></span> 2 code improvements
+            </div>
           </div>
-          <a class="pr-view-link">View full review <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+          <a class="pr-view-link"
+            >View full review
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <line x1="5" y1="12" x2="19" y2="12" />
+              <polyline points="12 5 19 12 12 19" /></svg
+          ></a>
         </div>
       </div>
 
@@ -142,14 +294,26 @@ onMounted(() => {
         </div>
         <div class="suggestion-code">
           <div class="code-before">
-            <div class="code-line"><span class="ln">1</span> <span class="kw">if</span> (user) {</div>
-            <div class="code-line"><span class="ln">2</span>   <span class="kw">return</span> user.name</div>
+            <div class="code-line">
+              <span class="ln">1</span> <span class="kw">if</span> (user) {
+            </div>
+            <div class="code-line">
+              <span class="ln">2</span> <span class="kw">return</span> user.name
+            </div>
             <div class="code-line"><span class="ln">3</span> }</div>
-            <div class="code-line"><span class="ln">4</span> <span class="kw">return</span> <span class="val">null</span></div>
+            <div class="code-line">
+              <span class="ln">4</span> <span class="kw">return</span>
+              <span class="val">null</span>
+            </div>
           </div>
           <div class="code-after">
-            <div class="code-line"><span class="ln">1</span> <span class="kw">return</span> user?.name</div>
-            <div class="code-line"><span class="ln">2</span>   ?? <span class="val">null</span></div>
+            <div class="code-line">
+              <span class="ln">1</span>
+              <span class="kw">return</span> user?.name
+            </div>
+            <div class="code-line">
+              <span class="ln">2</span> ?? <span class="val">null</span>
+            </div>
             <div class="code-line"><span class="ln">3</span></div>
           </div>
         </div>
@@ -170,20 +334,67 @@ onMounted(() => {
           <span class="fc-title">Security Alert</span>
         </div>
         <p class="sec-title">Potential SQL injection risk</p>
-        <p class="sec-desc">User input is concatenated into a query without sanitization.</p>
+        <p class="sec-desc">
+          User input is concatenated into a query without sanitization.
+        </p>
         <div class="sec-code">
-          <div class="code-line"><span class="ln">12</span> <span class="kw">const</span> query = <span class="str">`SELECT * FROM users</span></div>
-          <div class="code-line"><span class="ln">13</span>   <span class="str">WHERE id = <span class="interp">${userId}</span>`</span></div>
+          <div class="code-line">
+            <span class="ln">12</span> <span class="kw">const</span> query =
+            <span class="str">`SELECT * FROM users</span>
+          </div>
+          <div class="code-line">
+            <span class="ln">13</span>
+            <span class="str"
+              >WHERE id = <span class="interp">${userId}</span>`</span
+            >
+          </div>
         </div>
-        <a class="sec-fix-link">View fix <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></a>
+        <a class="sec-fix-link"
+          >View fix
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="5" y1="12" x2="19" y2="12" />
+            <polyline points="12 5 19 12 12 19" /></svg
+        ></a>
       </div>
 
       <!-- Impact Card -->
       <div class="float-card card-impact">
         <div class="fc-header">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#A6ABB5" stroke-width="2" stroke-linecap="round"><rect x="3" y="12" width="4" height="9"/><rect x="10" y="8" width="4" height="13"/><rect x="17" y="3" width="4" height="18"/></svg>
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#A6ABB5"
+            stroke-width="2"
+            stroke-linecap="round"
+          >
+            <rect x="3" y="12" width="4" height="9" />
+            <rect x="10" y="8" width="4" height="13" />
+            <rect x="17" y="3" width="4" height="18" />
+          </svg>
           <span class="fc-title">Impact</span>
-          <span class="impact-period">Last 30 days <svg width="10" height="10" viewBox="0 0 10 10"><path d="M2.5 3.5L5 6l2.5-2.5" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+          <span class="impact-period"
+            >Last 30 days
+            <svg width="10" height="10" viewBox="0 0 10 10">
+              <path
+                d="M2.5 3.5L5 6l2.5-2.5"
+                stroke="currentColor"
+                stroke-width="1.5"
+                fill="none"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              /></svg
+          ></span>
         </div>
         <div class="impact-stats">
           <div class="impact-stat">
@@ -230,22 +441,28 @@ onMounted(() => {
 <style scoped>
 /* ========== Base ========== */
 .landing {
-  --bg: #08090D;
+  --bg: #08090d;
   --bg-card: rgba(15, 17, 24, 0.9);
   --border: rgba(255, 255, 255, 0.08);
-  --text: #F5F7FA;
-  --text-secondary: #A6ABB5;
-  --text-muted: #6C7280;
-  --orange: #FF7A32;
-  --orange-light: #FF9A59;
+  --text: #f5f7fa;
+  --text-secondary: #a6abb5;
+  --text-muted: #6c7280;
+  --orange: #ff7a32;
+  --orange-light: #ff9a59;
   --orange-glow: rgba(255, 122, 50, 0.25);
-  --success: #38D996;
-  --danger: #FF5D61;
+  --success: #38d996;
+  --danger: #ff5d61;
 
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
   overflow-x: hidden;
 }
 
@@ -342,19 +559,25 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   padding: 12px 22px;
-  background: linear-gradient(180deg, #FF984F, #FF7528);
+  background: linear-gradient(180deg, #FF984F 0%, #FF7528 100%);
   color: #fff;
   font-size: 14px;
   font-weight: 600;
-  border-radius: 14px;
+  border-radius: 8px;
   text-decoration: none;
-  box-shadow: 0 8px 30px var(--orange-glow);
-  transition: transform 0.15s, box-shadow 0.15s;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 8px 30px var(--orange-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.2s ease;
 }
 
 .nav-cta:hover {
   transform: translateY(-1px);
-  box-shadow: 0 12px 40px rgba(255, 122, 50, 0.35);
+  box-shadow:
+    0 12px 40px rgba(255, 122, 50, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  filter: brightness(1.08);
 }
 
 .nav-mobile-toggle {
@@ -392,7 +615,11 @@ onMounted(() => {
 .bg-glow {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 55%, rgba(255, 122, 50, 0.13), transparent 35%);
+  background: radial-gradient(
+    circle at 50% 55%,
+    rgba(255, 122, 50, 0.13),
+    transparent 35%
+  );
   pointer-events: none;
   z-index: 0;
 }
@@ -423,6 +650,15 @@ onMounted(() => {
   padding: 8px 18px;
   border-radius: 100px;
   margin-bottom: 28px;
+  text-decoration: none;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+}
+
+.trust-badge:hover {
+  color: var(--text);
+  border-color: rgba(255, 255, 255, 0.16);
 }
 
 .trust-dot {
@@ -431,6 +667,21 @@ onMounted(() => {
   border-radius: 50%;
   background: var(--orange);
   box-shadow: 0 0 8px var(--orange-glow);
+  position: relative;
+}
+
+.trust-dot::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--orange);
+  animation: dotExpand 1.5s ease-out infinite;
+}
+
+@keyframes dotExpand {
+  0% { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(3); opacity: 0; }
 }
 
 .hero-title {
@@ -443,7 +694,7 @@ onMounted(() => {
 }
 
 .gradient-text {
-  background: linear-gradient(90deg, #FF873D, #FFA060);
+  background: linear-gradient(90deg, #ff873d, #ffa060);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -472,42 +723,65 @@ onMounted(() => {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  height: 48px;
-  padding: 0 28px;
-  background: linear-gradient(180deg, #FF984F, #FF7528);
+  height: 50px;
+  padding: 0 32px;
+  background: linear-gradient(180deg, #FF984F 0%, #FF7528 100%);
   color: #fff;
   font-size: 15px;
   font-weight: 600;
-  border-radius: 14px;
+  letter-spacing: -0.01em;
+  border-radius: 8px;
   text-decoration: none;
-  box-shadow: 0 8px 30px var(--orange-glow);
-  transition: transform 0.15s, box-shadow 0.15s;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 8px 30px var(--orange-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  transition: all 0.2s ease;
 }
 
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(255, 122, 50, 0.35);
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    0 14px 40px rgba(255, 122, 50, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  filter: brightness(1.08);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  filter: brightness(0.95);
 }
 
 .btn-secondary {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  height: 48px;
-  padding: 0 28px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  height: 50px;
+  padding: 0 32px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   color: var(--text);
   font-size: 15px;
   font-weight: 500;
-  border-radius: 14px;
+  letter-spacing: -0.01em;
+  border-radius: 8px;
   text-decoration: none;
-  transition: background 0.15s, border-color 0.15s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
 }
 
 .btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-secondary:active {
+  transform: translateY(0);
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .play-icon {
@@ -557,7 +831,8 @@ onMounted(() => {
 }
 
 @keyframes mascotFloat {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0) rotate(0deg);
   }
   50% {
@@ -595,7 +870,7 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 14px;
+  border-radius: 8px;
   background: rgba(15, 17, 24, 0.6);
   color: rgba(255, 255, 255, 0.15);
   font-size: 16px;
@@ -616,8 +891,13 @@ onMounted(() => {
 }
 
 @keyframes decoFloat {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
 }
 
 /* ========== Floating Cards (shared) ========== */
@@ -631,27 +911,37 @@ onMounted(() => {
   backdrop-filter: blur(16px);
   padding: 20px;
   opacity: 0;
-  transform: translateY(20px);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transform: translateY(40px) scale(0.95);
+  filter: blur(4px);
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    filter 0.3s ease;
 }
 
 .loaded .float-card {
-  animation: cardEnter 0.6s ease forwards;
+  animation: cardEnter 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .float-card:hover {
   transform: translateY(-4px) rotate(0deg) !important;
   box-shadow: 0 30px 100px rgba(0, 0, 0, 0.5);
+  filter: blur(0);
 }
 
 @keyframes cardEnter {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(40px) scale(0.95);
+    filter: blur(4px);
+  }
+  60% {
+    filter: blur(0);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+    filter: blur(0);
   }
 }
 
@@ -675,16 +965,39 @@ onMounted(() => {
   top: 180px;
   width: 330px;
   transform: rotate(-4deg);
-  animation-delay: 0s;
+  animation-delay: 0.1s;
 }
 
 .loaded .card-pr {
-  animation-name: cardEnterPR;
+  animation:
+    cardEnterPR 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards,
+    cardFloatA 6s ease-in-out 1s infinite;
 }
 
 @keyframes cardEnterPR {
-  from { opacity: 0; transform: translateY(20px) rotate(-4deg); }
-  to { opacity: 1; transform: translateY(0) rotate(-4deg); }
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.95) rotate(-4deg);
+    filter: blur(4px);
+  }
+  60% {
+    filter: blur(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(-4deg);
+    filter: blur(0);
+  }
+}
+
+@keyframes cardFloatA {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-4deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(-3.5deg);
+  }
 }
 
 .badge-open {
@@ -803,9 +1116,15 @@ onMounted(() => {
   flex-shrink: 0;
 }
 
-.dot-danger { background: var(--danger); }
-.dot-warning { background: #FFB347; }
-.dot-info { background: #5B9DF0; }
+.dot-danger {
+  background: var(--danger);
+}
+.dot-warning {
+  background: #ffb347;
+}
+.dot-info {
+  background: #5b9df0;
+}
 
 .pr-view-link {
   display: inline-flex;
@@ -828,16 +1147,39 @@ onMounted(() => {
   top: 520px;
   width: 390px;
   transform: rotate(-1deg);
-  animation-delay: 0.1s;
+  animation-delay: 0.3s;
 }
 
 .loaded .card-suggestion {
-  animation-name: cardEnterSuggestion;
+  animation:
+    cardEnterSuggestion 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards,
+    cardFloatB 7s ease-in-out 1.2s infinite;
 }
 
 @keyframes cardEnterSuggestion {
-  from { opacity: 0; transform: translateY(20px) rotate(-1deg); }
-  to { opacity: 1; transform: translateY(0) rotate(-1deg); }
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.95) rotate(-1deg);
+    filter: blur(4px);
+  }
+  60% {
+    filter: blur(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(-1deg);
+    filter: blur(0);
+  }
+}
+
+@keyframes cardFloatB {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(-0.5deg);
+  }
 }
 
 .sparkle {
@@ -872,7 +1214,7 @@ onMounted(() => {
 
 .suggestion-code {
   display: flex;
-  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
   font-size: 12px;
   line-height: 1.7;
 }
@@ -904,10 +1246,18 @@ onMounted(() => {
   user-select: none;
 }
 
-.kw { color: #C678DD; }
-.val { color: #D19A66; }
-.str { color: #98C379; }
-.interp { color: var(--orange-light); }
+.kw {
+  color: #c678dd;
+}
+.val {
+  color: #d19a66;
+}
+.str {
+  color: #98c379;
+}
+.interp {
+  color: var(--orange-light);
+}
 
 .suggestion-footer {
   display: flex;
@@ -948,12 +1298,35 @@ kbd {
 }
 
 .loaded .card-security {
-  animation-name: cardEnterSecurity;
+  animation:
+    cardEnterSecurity 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards,
+    cardFloatC 5.5s ease-in-out 1.1s infinite;
 }
 
 @keyframes cardEnterSecurity {
-  from { opacity: 0; transform: translateY(20px) rotate(4deg); }
-  to { opacity: 1; transform: translateY(0) rotate(4deg); }
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.95) rotate(4deg);
+    filter: blur(4px);
+  }
+  60% {
+    filter: blur(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(4deg);
+    filter: blur(0);
+  }
+}
+
+@keyframes cardFloatC {
+  0%,
+  100% {
+    transform: translateY(0) rotate(4deg);
+  }
+  50% {
+    transform: translateY(-7px) rotate(3.5deg);
+  }
 }
 
 .badge-high {
@@ -986,7 +1359,7 @@ kbd {
   background: rgba(0, 0, 0, 0.3);
   border-radius: 10px;
   padding: 12px;
-  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
   font-size: 12px;
   line-height: 1.7;
   margin-bottom: 14px;
@@ -1012,11 +1385,17 @@ kbd {
   right: 9%;
   top: 500px;
   width: 360px;
-  animation-delay: 0.3s;
+  animation-delay: 0.45s;
 }
 
 .loaded .card-impact {
-  animation-name: cardEnter;
+  animation: cardEnter 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.45s forwards,
+             cardFloatD 6.5s ease-in-out 1.3s infinite;
+}
+
+@keyframes cardFloatD {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
 }
 
 .impact-period {
@@ -1095,7 +1474,9 @@ kbd {
   height: 240px;
   background: #060810;
   border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-  box-shadow: 0 -1px 0 rgba(100, 140, 255, 0.06), 0 -4px 30px rgba(100, 140, 255, 0.03);
+  box-shadow:
+    0 -1px 0 rgba(100, 140, 255, 0.06),
+    0 -4px 30px rgba(100, 140, 255, 0.03);
   z-index: 2;
 }
 
@@ -1103,35 +1484,83 @@ kbd {
 
 /* Laptop */
 @media (max-width: 1400px) {
-  .hero-title { font-size: 64px; }
-  .card-pr { left: 4%; width: 300px; }
-  .card-suggestion { left: 2%; width: 350px; }
-  .card-security { right: 3%; width: 320px; }
-  .card-impact { right: 4%; width: 330px; }
+  .hero-title {
+    font-size: 64px;
+  }
+  .card-pr {
+    left: 4%;
+    width: 300px;
+  }
+  .card-suggestion {
+    left: 2%;
+    width: 350px;
+  }
+  .card-security {
+    right: 3%;
+    width: 320px;
+  }
+  .card-impact {
+    right: 4%;
+    width: 330px;
+  }
 }
 
 /* Tablet */
 @media (max-width: 1100px) {
-  .landing-nav-links { display: none; }
-  .nav-mobile-toggle { display: flex; }
-  .hero-title { font-size: 56px; }
-  .float-card { transform: rotate(0deg) !important; }
-  .card-pr { left: 2%; width: 280px; top: 200px; }
-  .card-suggestion { left: 1%; width: 300px; top: 500px; }
-  .card-security { right: 1%; width: 280px; top: 200px; }
-  .card-impact { right: 2%; width: 300px; top: 480px; }
-  .handwritten { display: none; }
-  .deco-code { display: none; }
+  .landing-nav-links {
+    display: none;
+  }
+  .nav-mobile-toggle {
+    display: flex;
+  }
+  .hero-title {
+    font-size: 56px;
+  }
+  .float-card {
+    transform: rotate(0deg) !important;
+  }
+  .card-pr {
+    left: 2%;
+    width: 280px;
+    top: 200px;
+  }
+  .card-suggestion {
+    left: 1%;
+    width: 300px;
+    top: 500px;
+  }
+  .card-security {
+    right: 1%;
+    width: 280px;
+    top: 200px;
+  }
+  .card-impact {
+    right: 2%;
+    width: 300px;
+    top: 480px;
+  }
+  .handwritten {
+    display: none;
+  }
+  .deco-code {
+    display: none;
+  }
 }
 
 /* Mobile */
 @media (max-width: 768px) {
-  .navbar { height: 64px; }
+  .navbar {
+    height: 64px;
+  }
 
   .landing-nav-links,
-  .nav-actions { display: none; }
+  .nav-actions {
+    display: none;
+  }
 
-  .nav-mobile-toggle { display: flex; }
+  .nav-mobile-toggle {
+    display: flex;
+  }
 
   .hero {
     min-height: auto;
@@ -1150,7 +1579,9 @@ kbd {
     font-size: 16px;
   }
 
-  .desktop-br { display: none; }
+  .desktop-br {
+    display: none;
+  }
 
   .cta-row {
     flex-direction: column;
@@ -1183,7 +1614,9 @@ kbd {
     height: 200px;
   }
 
-  .orbit { display: none; }
+  .orbit {
+    display: none;
+  }
 
   /* Cards become stacked below mascot */
   .float-card {
@@ -1197,16 +1630,27 @@ kbd {
     transform: none !important;
   }
 
-  .card-suggestion { display: none; }
+  .card-suggestion {
+    display: none;
+  }
 
-  .handwritten { display: none; }
-  .deco-code { display: none; }
-  .horizon { display: none; }
-
+  .handwritten {
+    display: none;
+  }
+  .deco-code {
+    display: none;
+  }
+  .horizon {
+    display: none;
+  }
 }
 
 @media (max-width: 480px) {
-  .hero-title { font-size: 36px; }
-  .trust-logo svg { display: none; }
+  .hero-title {
+    font-size: 36px;
+  }
+  .trust-logo svg {
+    display: none;
+  }
 }
 </style>
