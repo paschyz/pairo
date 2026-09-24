@@ -107,4 +107,17 @@ h1 { font-size: 1.5rem; font-weight: 600; }
 }
 .load-more:hover { background: #282a3a; }
 .load-more:disabled { opacity: 0.5; cursor: default; }
+
+@media (max-width: 768px) {
+  .review-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .review-info { flex-wrap: wrap; }
+  .review-meta {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
 </style>

@@ -94,4 +94,15 @@ h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; }
   margin-top: 0.5rem; font-size: 0.85rem; color: #8b8fa3;
   padding-top: 0.5rem; border-top: 1px solid #2a2d3a;
 }
+
+@media (max-width: 768px) {
+  .finding-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+  }
+  .finding-file {
+    word-break: break-all;
+  }
+}
 </style>

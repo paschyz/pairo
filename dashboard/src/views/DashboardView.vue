@@ -224,4 +224,29 @@ h2 {
   min-width: 60px;
   text-align: right;
 }
+
+@media (max-width: 768px) {
+  .dashboard { padding: 0; }
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .review-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .review-meta {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .stat-value {
+    font-size: 1.4rem;
+  }
+}
 </style>

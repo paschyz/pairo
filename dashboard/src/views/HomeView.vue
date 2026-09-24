@@ -19,7 +19,7 @@ onMounted(() => {
           <img :src="logo" alt="Pairo" class="nav-logo-img" />
           <span class="nav-logo-text">Pairo</span>
         </a>
-        <div class="landing-nav-links">
+        <!-- <div class="landing-nav-links">
           <a href="#" class="landing-nav-link"
             >Product
             <svg class="chevron" width="10" height="10" viewBox="0 0 10 10">
@@ -58,7 +58,7 @@ onMounted(() => {
                 stroke-linejoin="round"
               /></svg
           ></a>
-        </div>
+        </div> -->
         <button class="nav-mobile-toggle" aria-label="Menu">
           <svg
             width="22"
@@ -115,7 +115,7 @@ onMounted(() => {
         <div class="cta-row">
           <div class="btn-primary-wrap">
             <a
-              href="https://github.com/paschyz/pairo"
+              href="https://github.com/marketplace/pairoai"
               target="_blank"
               rel="noopener"
               class="btn-primary"
@@ -189,56 +189,147 @@ onMounted(() => {
       <!-- ===== Floating Cards ===== -->
 
       <!-- PR Review Card -->
-      <div class="float-card card-pr">
-        <div class="fc-header">
-          <svg width="20" height="20" viewBox="0 0 16 16" fill="#8b949e">
-            <path
-              d="M7.177 3.073L9.573.677A.25.25 0 0110 .854v4.792a.25.25 0 01-.427.177L7.177 3.427a.25.25 0 010-.354zM3.75 2.5a.75.75 0 100 1.5.75.75 0 000-1.5zm-2.25.75a2.25 2.25 0 113 2.122v5.256a2.251 2.251 0 11-1.5 0V5.372A2.25 2.25 0 011.5 3.25zM11 2.5h-1V4h1a1 1 0 011 1v5.628a2.251 2.251 0 101.5 0V5A2.5 2.5 0 0011 2.5zm1 10.25a.75.75 0 111.5 0 .75.75 0 01-1.5 0zM3.75 12a.75.75 0 100 1.5.75.75 0 000-1.5z"
-            />
-          </svg>
-          <span class="fc-title">Pull Request Review</span>
-          <span class="badge-open">
-            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+      <div class="float-wrap card-pr">
+        <div class="float-card">
+          <div class="fc-header">
+            <svg width="20" height="20" viewBox="0 0 16 16" fill="#8b949e">
               <path
-                d="M5 2v6M2 5h6"
-                stroke="#38D996"
-                stroke-width="1.5"
-                stroke-linecap="round"
+                d="M7.177 3.073L9.573.677A.25.25 0 0110 .854v4.792a.25.25 0 01-.427.177L7.177 3.427a.25.25 0 010-.354zM3.75 2.5a.75.75 0 100 1.5.75.75 0 000-1.5zm-2.25.75a2.25 2.25 0 113 2.122v5.256a2.251 2.251 0 11-1.5 0V5.372A2.25 2.25 0 011.5 3.25zM11 2.5h-1V4h1a1 1 0 011 1v5.628a2.251 2.251 0 101.5 0V5A2.5 2.5 0 0011 2.5zm1 10.25a.75.75 0 111.5 0 .75.75 0 01-1.5 0zM3.75 12a.75.75 0 100 1.5.75.75 0 000-1.5z"
               />
             </svg>
-            Open
-          </span>
+            <span class="fc-title">Pull Request Review</span>
+            <span class="badge-open">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                <path
+                  d="M5 2v6M2 5h6"
+                  stroke="#38D996"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                />
+              </svg>
+              Open
+            </span>
+          </div>
+          <div class="pr-body">
+            <p class="pr-title">feat: add user subscription flow</p>
+            <div class="pr-meta">
+              <div class="pr-avatar"></div>
+              <span class="pr-number">#4821</span>
+            </div>
+            <div class="pr-author">by taylor-dev &nbsp; 2 hours ago</div>
+          </div>
+          <div class="pr-divider"></div>
+          <div class="pr-review">
+            <div class="pr-review-header">
+              <img :src="logo" class="pr-pairo-icon" />
+              <div>
+                <strong>Pairo</strong> reviewed 5 minutes ago
+                <div class="pr-review-counts">3 issues · 2 suggestions</div>
+              </div>
+            </div>
+            <div class="pr-findings">
+              <div class="pr-finding">
+                <span class="dot dot-danger"></span> 1 potential bug
+              </div>
+              <div class="pr-finding">
+                <span class="dot dot-warning"></span> 1 security suggestion
+              </div>
+              <div class="pr-finding">
+                <span class="dot dot-info"></span> 2 code improvements
+              </div>
+            </div>
+            <a class="pr-view-link"
+              >View full review
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <line x1="5" y1="12" x2="19" y2="12" />
+                <polyline points="12 5 19 12 12 19" /></svg
+            ></a>
+          </div>
         </div>
-        <div class="pr-body">
-          <p class="pr-title">feat: add user subscription flow</p>
-          <div class="pr-meta">
-            <div class="pr-avatar"></div>
-            <span class="pr-number">#4821</span>
+      </div>
+
+      <!-- AI Suggestion Card -->
+      <div class="float-wrap card-suggestion">
+        <div class="float-card">
+          <div class="fc-header">
+            <span class="sparkle">✦</span>
+            <span class="fc-title">AI Suggestion</span>
           </div>
-          <div class="pr-author">by taylor-dev &nbsp; 2 hours ago</div>
+          <div class="suggestion-tabs">
+            <div class="stab stab-before">Before</div>
+            <div class="stab stab-after">After</div>
+          </div>
+          <div class="suggestion-code">
+            <div class="code-before">
+              <div class="code-line">
+                <span class="ln">1</span> <span class="kw">if</span> (user) {
+              </div>
+              <div class="code-line">
+                <span class="ln">2</span>
+                <span class="kw">return</span> user.name
+              </div>
+              <div class="code-line"><span class="ln">3</span> }</div>
+              <div class="code-line">
+                <span class="ln">4</span> <span class="kw">return</span>
+                <span class="val">null</span>
+              </div>
+            </div>
+            <div class="code-after">
+              <div class="code-line">
+                <span class="ln">1</span>
+                <span class="kw">return</span> user?.name
+              </div>
+              <div class="code-line">
+                <span class="ln">2</span> ?? <span class="val">null</span>
+              </div>
+              <div class="code-line"><span class="ln">3</span></div>
+            </div>
+          </div>
+          <div class="suggestion-footer">
+            <span>Apply suggestion</span>
+            <div class="kbd-group">
+              <kbd>⌘</kbd>
+              <kbd>↵</kbd>
+            </div>
+          </div>
         </div>
-        <div class="pr-divider"></div>
-        <div class="pr-review">
-          <div class="pr-review-header">
-            <img :src="logo" class="pr-pairo-icon" />
-            <div>
-              <strong>Pairo</strong> reviewed 5 minutes ago
-              <div class="pr-review-counts">3 issues · 2 suggestions</div>
+      </div>
+
+      <!-- Security Alert Card -->
+      <div class="float-wrap card-security">
+        <div class="float-card">
+          <span class="badge-high">High</span>
+          <div class="fc-header">
+            <span class="dot-lg dot-danger"></span>
+            <span class="fc-title">Security Alert</span>
+          </div>
+          <p class="sec-title">Potential SQL injection risk</p>
+          <p class="sec-desc">
+            User input is concatenated into a query without sanitization.
+          </p>
+          <div class="sec-code">
+            <div class="code-line">
+              <span class="ln">12</span> <span class="kw">const</span> query =
+              <span class="str">`SELECT * FROM users</span>
+            </div>
+            <div class="code-line">
+              <span class="ln">13</span>
+              <span class="str"
+                >WHERE id = <span class="interp">${userId}</span>`</span
+              >
             </div>
           </div>
-          <div class="pr-findings">
-            <div class="pr-finding">
-              <span class="dot dot-danger"></span> 1 potential bug
-            </div>
-            <div class="pr-finding">
-              <span class="dot dot-warning"></span> 1 security suggestion
-            </div>
-            <div class="pr-finding">
-              <span class="dot dot-info"></span> 2 code improvements
-            </div>
-          </div>
-          <a class="pr-view-link"
-            >View full review
+          <a class="sec-fix-link"
+            >View fix
             <svg
               width="12"
               height="12"
@@ -255,159 +346,92 @@ onMounted(() => {
         </div>
       </div>
 
-      <!-- AI Suggestion Card -->
-      <div class="float-card card-suggestion">
-        <div class="fc-header">
-          <span class="sparkle">✦</span>
-          <span class="fc-title">AI Suggestion</span>
-        </div>
-        <div class="suggestion-tabs">
-          <div class="stab stab-before">Before</div>
-          <div class="stab stab-after">After</div>
-        </div>
-        <div class="suggestion-code">
-          <div class="code-before">
-            <div class="code-line">
-              <span class="ln">1</span> <span class="kw">if</span> (user) {
-            </div>
-            <div class="code-line">
-              <span class="ln">2</span> <span class="kw">return</span> user.name
-            </div>
-            <div class="code-line"><span class="ln">3</span> }</div>
-            <div class="code-line">
-              <span class="ln">4</span> <span class="kw">return</span>
-              <span class="val">null</span>
-            </div>
-          </div>
-          <div class="code-after">
-            <div class="code-line">
-              <span class="ln">1</span>
-              <span class="kw">return</span> user?.name
-            </div>
-            <div class="code-line">
-              <span class="ln">2</span> ?? <span class="val">null</span>
-            </div>
-            <div class="code-line"><span class="ln">3</span></div>
-          </div>
-        </div>
-        <div class="suggestion-footer">
-          <span>Apply suggestion</span>
-          <div class="kbd-group">
-            <kbd>⌘</kbd>
-            <kbd>↵</kbd>
-          </div>
-        </div>
-      </div>
-
-      <!-- Security Alert Card -->
-      <div class="float-card card-security">
-        <span class="badge-high">High</span>
-        <div class="fc-header">
-          <span class="dot-lg dot-danger"></span>
-          <span class="fc-title">Security Alert</span>
-        </div>
-        <p class="sec-title">Potential SQL injection risk</p>
-        <p class="sec-desc">
-          User input is concatenated into a query without sanitization.
-        </p>
-        <div class="sec-code">
-          <div class="code-line">
-            <span class="ln">12</span> <span class="kw">const</span> query =
-            <span class="str">`SELECT * FROM users</span>
-          </div>
-          <div class="code-line">
-            <span class="ln">13</span>
-            <span class="str"
-              >WHERE id = <span class="interp">${userId}</span>`</span
-            >
-          </div>
-        </div>
-        <a class="sec-fix-link"
-          >View fix
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <line x1="5" y1="12" x2="19" y2="12" />
-            <polyline points="12 5 19 12 12 19" /></svg
-        ></a>
-      </div>
-
       <!-- Impact Card -->
-      <div class="float-card card-impact">
-        <div class="fc-header">
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="#A6ABB5"
-            stroke-width="2"
-            stroke-linecap="round"
-          >
-            <rect x="3" y="12" width="4" height="9" />
-            <rect x="10" y="8" width="4" height="13" />
-            <rect x="17" y="3" width="4" height="18" />
-          </svg>
-          <span class="fc-title">Impact</span>
-          <span class="impact-period"
-            >Last 30 days
-            <svg width="10" height="10" viewBox="0 0 10 10">
-              <path
-                d="M2.5 3.5L5 6l2.5-2.5"
-                stroke="currentColor"
-                stroke-width="1.5"
-                fill="none"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              /></svg
-          ></span>
-        </div>
-        <div class="impact-stats">
-          <div class="impact-stat">
-            <span class="impact-num">127</span>
-            <span class="impact-label">PRs reviewed</span>
+      <div class="float-wrap card-impact">
+        <div class="float-card">
+          <div class="fc-header">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#A6ABB5"
+              stroke-width="2"
+              stroke-linecap="round"
+            >
+              <rect x="3" y="12" width="4" height="9" />
+              <rect x="10" y="8" width="4" height="13" />
+              <rect x="17" y="3" width="4" height="18" />
+            </svg>
+            <span class="fc-title">Impact</span>
+            <span class="impact-period"
+              >Last 30 days
+              <svg width="10" height="10" viewBox="0 0 10 10">
+                <path
+                  d="M2.5 3.5L5 6l2.5-2.5"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  fill="none"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                /></svg
+            ></span>
           </div>
-          <div class="impact-stat">
-            <span class="impact-num">48</span>
-            <span class="impact-label">Bugs caught</span>
+          <div class="impact-stats">
+            <div class="impact-stat">
+              <span class="impact-num">127</span>
+              <span class="impact-label">PRs reviewed</span>
+            </div>
+            <div class="impact-stat">
+              <span class="impact-num">48</span>
+              <span class="impact-label">Bugs caught</span>
+            </div>
+            <div class="impact-stat">
+              <span class="impact-num">12</span>
+              <span class="impact-label">Security issues</span>
+            </div>
+            <div class="impact-stat">
+              <span class="impact-num">3.2h</span>
+              <span class="impact-label">Dev time saved</span>
+            </div>
           </div>
-          <div class="impact-stat">
-            <span class="impact-num">12</span>
-            <span class="impact-label">Security issues</span>
+          <div class="impact-chart">
+            <div class="bar" style="height: 40%"></div>
+            <div class="bar" style="height: 65%"></div>
+            <div class="bar" style="height: 45%"></div>
+            <div class="bar" style="height: 80%"></div>
+            <div class="bar" style="height: 55%"></div>
+            <div class="bar" style="height: 90%"></div>
+            <div class="bar" style="height: 70%"></div>
+            <div class="bar" style="height: 60%"></div>
+            <div class="bar" style="height: 95%"></div>
+            <div class="bar" style="height: 75%"></div>
           </div>
-          <div class="impact-stat">
-            <span class="impact-num">3.2h</span>
-            <span class="impact-label">Dev time saved</span>
+          <div class="impact-metric">
+            <span class="metric-up">↑ 40%</span>
+            <span class="metric-label">Fewer production issues</span>
           </div>
-        </div>
-        <div class="impact-chart">
-          <div class="bar" style="height: 40%"></div>
-          <div class="bar" style="height: 65%"></div>
-          <div class="bar" style="height: 45%"></div>
-          <div class="bar" style="height: 80%"></div>
-          <div class="bar" style="height: 55%"></div>
-          <div class="bar" style="height: 90%"></div>
-          <div class="bar" style="height: 70%"></div>
-          <div class="bar" style="height: 60%"></div>
-          <div class="bar" style="height: 95%"></div>
-          <div class="bar" style="height: 75%"></div>
-        </div>
-        <div class="impact-metric">
-          <span class="metric-up">↑ 40%</span>
-          <span class="metric-label">Fewer production issues</span>
         </div>
       </div>
 
       <!-- Horizon -->
       <div class="horizon"></div>
     </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="landing-footer">
+      <a
+        href="https://github.com/paschyz/pairo"
+        target="_blank"
+        rel="noopener"
+        class="footer-github"
+      >
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z" />
+        </svg>
+        paschyz/pairo
+      </a>
+    </footer>
   </div>
 </template>
 
@@ -579,6 +603,7 @@ onMounted(() => {
   border-radius: 100px;
   margin-bottom: 28px;
   text-decoration: none;
+  opacity: 0;
   transition:
     border-color 0.15s,
     color 0.15s;
@@ -625,10 +650,18 @@ onMounted(() => {
   letter-spacing: -0.04em;
   color: var(--text);
   margin: 0;
+  opacity: 0;
 }
 
 .gradient-text {
-  background: linear-gradient(90deg, #e05500, #ffcc66, #e05500, #ffcc66, #e05500);
+  background: linear-gradient(
+    90deg,
+    #e05500,
+    #ffcc66,
+    #e05500,
+    #ffcc66,
+    #e05500
+  );
   background-size: 200% 100%;
   animation: gradient-cycle 3s ease infinite;
   -webkit-background-clip: text;
@@ -637,8 +670,12 @@ onMounted(() => {
 }
 
 @keyframes gradient-cycle {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 200% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
 }
 
 .hero-subtitle {
@@ -646,6 +683,7 @@ onMounted(() => {
   font-size: 18px;
   line-height: 1.6;
   color: var(--text-secondary);
+  opacity: 0;
 }
 
 .desktop-br {
@@ -658,6 +696,7 @@ onMounted(() => {
   justify-content: center;
   gap: 16px;
   margin-top: 36px;
+  opacity: 0;
 }
 
 .btn-primary-wrap {
@@ -668,7 +707,7 @@ onMounted(() => {
 }
 
 .btn-primary-wrap::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 50%;
@@ -689,7 +728,9 @@ onMounted(() => {
 }
 
 @keyframes borderSpin {
-  to { transform: translate(-50%, -50%) rotate(360deg); }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
 }
 
 .btn-primary {
@@ -798,7 +839,11 @@ onMounted(() => {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.06) 0%, transparent 50%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.06) 0%,
+    transparent 50%
+  );
   border-radius: inherit;
   pointer-events: none;
 }
@@ -936,10 +981,52 @@ onMounted(() => {
   }
 }
 
+/* ========== Hero Entrance ========== */
+@keyframes heroFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.loaded .trust-badge {
+  animation: heroFadeUp 0.6s ease-out 0.1s both;
+}
+.loaded .hero-title {
+  animation: heroFadeUp 0.6s ease-out 0.25s both;
+}
+.loaded .hero-subtitle {
+  animation: heroFadeUp 0.6s ease-out 0.4s both;
+}
+.loaded .cta-row {
+  animation: heroFadeUp 0.6s ease-out 0.55s both;
+}
+.loaded .mascot-wrap {
+  animation: mascotFadeUp 0.8s ease-out 0.7s both;
+}
+
+@keyframes mascotFadeUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
 /* ========== Floating Cards (shared) ========== */
-.float-card {
+.float-wrap {
   position: absolute;
   z-index: 4;
+}
+
+.float-card {
   background: var(--bg-card);
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 20px;
@@ -947,39 +1034,34 @@ onMounted(() => {
   backdrop-filter: blur(16px);
   padding: 20px;
   opacity: 0;
-  transform: translateY(40px) scale(0.9);
+  transform: scale(0.9);
   filter: blur(4px);
   transition:
-    transform 0.4s ease,
-    box-shadow 0.4s ease,
-    filter 0.4s ease,
-    opacity 0.4s ease;
+    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.5s ease,
+    filter 0.6s ease,
+    opacity 0.6s ease;
+  will-change: transform, opacity, filter;
 }
 
-.loaded .float-card {
-  animation: cardEnter 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.float-wrap:hover {
+  animation-play-state: paused !important;
 }
 
-.float-card:hover {
-  opacity: 1 !important;
-  transform: translateY(-4px) rotate(0deg) scale(1) !important;
+.float-wrap:hover .float-card {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
-  filter: blur(0) !important;
+  filter: blur(0);
+  transition-delay: 0s;
 }
 
-@keyframes cardEnter {
+@keyframes wrapEnter {
   from {
-    opacity: 0;
-    transform: translateY(40px) scale(0.9);
-    filter: blur(4px);
-  }
-  60% {
-    filter: blur(0);
+    transform: translateY(40px);
   }
   to {
-    opacity: 0.55;
-    transform: translateY(0) scale(0.92);
-    filter: blur(0);
+    transform: translateY(0);
   }
 }
 
@@ -1002,29 +1084,28 @@ onMounted(() => {
   left: 8%;
   top: 180px;
   width: 330px;
-  transform: rotate(-4deg);
-  animation-delay: 0.4s;
 }
 
 .loaded .card-pr {
   animation:
-    cardEnterPR 1s cubic-bezier(0.16, 1, 0.3, 1) 0.4s forwards,
+    wrapEnter 1s cubic-bezier(0.16, 1, 0.3, 1) 0.4s both,
     cardFloatA 6s ease-in-out 1.5s infinite;
 }
 
-@keyframes cardEnterPR {
-  from { opacity: 0; transform: translateY(40px) scale(0.9) rotate(-4deg); filter: blur(4px); }
-  60% { filter: blur(0); }
-  to { opacity: 0.55; transform: translateY(0) scale(0.92) rotate(-4deg); filter: blur(0); }
+.loaded .card-pr .float-card {
+  opacity: 0.55;
+  transform: scale(0.92) rotate(-4deg);
+  filter: blur(0);
+  transition-delay: 0.4s;
 }
 
 @keyframes cardFloatA {
   0%,
   100% {
-    transform: translateY(0) rotate(-4deg);
+    transform: translateY(0);
   }
   50% {
-    transform: translateY(-6px) rotate(-3.5deg);
+    transform: translateY(-6px);
   }
 }
 
@@ -1174,29 +1255,28 @@ onMounted(() => {
   left: 6%;
   top: 520px;
   width: 390px;
-  transform: rotate(-1deg);
-  animation-delay: 0.7s;
 }
 
 .loaded .card-suggestion {
   animation:
-    cardEnterSuggestion 1s cubic-bezier(0.16, 1, 0.3, 1) 0.7s forwards,
+    wrapEnter 1s cubic-bezier(0.16, 1, 0.3, 1) 0.7s both,
     cardFloatB 7s ease-in-out 1.8s infinite;
 }
 
-@keyframes cardEnterSuggestion {
-  from { opacity: 0; transform: translateY(40px) scale(0.9) rotate(-1deg); filter: blur(4px); }
-  60% { filter: blur(0); }
-  to { opacity: 0.55; transform: translateY(0) scale(0.92) rotate(-1deg); filter: blur(0); }
+.loaded .card-suggestion .float-card {
+  opacity: 0.55;
+  transform: scale(0.92) rotate(-1deg);
+  filter: blur(0);
+  transition-delay: 0.7s;
 }
 
 @keyframes cardFloatB {
   0%,
   100% {
-    transform: translateY(0) rotate(-1deg);
+    transform: translateY(0);
   }
   50% {
-    transform: translateY(-8px) rotate(-0.5deg);
+    transform: translateY(-8px);
   }
 }
 
@@ -1311,29 +1391,28 @@ kbd {
   right: 6%;
   top: 180px;
   width: 350px;
-  transform: rotate(4deg);
-  animation-delay: 0.55s;
 }
 
 .loaded .card-security {
   animation:
-    cardEnterSecurity 1s cubic-bezier(0.16, 1, 0.3, 1) 0.55s forwards,
+    wrapEnter 1s cubic-bezier(0.16, 1, 0.3, 1) 0.55s both,
     cardFloatC 5.5s ease-in-out 1.6s infinite;
 }
 
-@keyframes cardEnterSecurity {
-  from { opacity: 0; transform: translateY(40px) scale(0.9) rotate(4deg); filter: blur(4px); }
-  60% { filter: blur(0); }
-  to { opacity: 0.55; transform: translateY(0) scale(0.92) rotate(4deg); filter: blur(0); }
+.loaded .card-security .float-card {
+  opacity: 0.55;
+  transform: scale(0.92) rotate(4deg);
+  filter: blur(0);
+  transition-delay: 0.55s;
 }
 
 @keyframes cardFloatC {
   0%,
   100% {
-    transform: translateY(0) rotate(4deg);
+    transform: translateY(0);
   }
   50% {
-    transform: translateY(-7px) rotate(3.5deg);
+    transform: translateY(-7px);
   }
 }
 
@@ -1393,13 +1472,19 @@ kbd {
   right: 9%;
   top: 500px;
   width: 360px;
-  animation-delay: 0.85s;
 }
 
 .loaded .card-impact {
   animation:
-    cardEnter 1s cubic-bezier(0.16, 1, 0.3, 1) 0.85s forwards,
+    wrapEnter 1s cubic-bezier(0.16, 1, 0.3, 1) 0.85s both,
     cardFloatD 6.5s ease-in-out 1.9s infinite;
+}
+
+.loaded .card-impact .float-card {
+  opacity: 0.55;
+  transform: scale(0.92);
+  filter: blur(0);
+  transition-delay: 0.85s;
 }
 
 @keyframes cardFloatD {
@@ -1494,6 +1579,27 @@ kbd {
   z-index: 2;
 }
 
+/* ========== Footer ========== */
+.landing-footer {
+  padding: 32px 0;
+  text-align: center;
+  background: var(--bg);
+}
+
+.footer-github {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 14px;
+  transition: color 0.2s;
+}
+
+.footer-github:hover {
+  color: var(--text);
+}
+
 /* ========== Responsive ========== */
 
 /* Laptop */
@@ -1527,31 +1633,35 @@ kbd {
   .nav-mobile-toggle {
     display: flex;
   }
+  .nav-container {
+    padding: 0 24px;
+  }
   .hero-title {
-    font-size: 56px;
+    font-size: 52px;
+  }
+  .hero-subtitle {
+    font-size: 16px;
   }
   .float-card {
     transform: rotate(0deg) !important;
   }
   .card-pr {
-    left: 2%;
-    width: 280px;
+    left: 1%;
+    width: 260px;
     top: 200px;
   }
   .card-suggestion {
-    left: 1%;
-    width: 300px;
-    top: 500px;
+    display: none;
   }
   .card-security {
     right: 1%;
-    width: 280px;
+    width: 260px;
     top: 200px;
   }
   .card-impact {
-    right: 2%;
-    width: 300px;
-    top: 480px;
+    right: 1%;
+    width: 280px;
+    top: 460px;
   }
   .handwritten {
     display: none;
@@ -1563,14 +1673,31 @@ kbd {
 
 /* Mobile */
 @media (max-width: 768px) {
+  .trust-badge,
+  .hero-title,
+  .hero-subtitle,
+  .cta-row,
+  .mascot-wrap {
+    opacity: 1;
+    animation: none;
+  }
   .navbar {
-    height: 64px;
+    height: 56px;
+  }
+  .nav-container {
+    padding: 0 16px;
+  }
+  .nav-logo-img {
+    width: 26px;
+    height: 26px;
+  }
+  .nav-logo-text {
+    font-size: 16px;
   }
 
   .landing-nav-links {
     display: none;
   }
-
   .nav-mobile-toggle {
     display: flex;
   }
@@ -1579,19 +1706,21 @@ kbd {
     min-height: auto;
     padding-bottom: 40px;
   }
-
   .hero-text {
-    padding-top: 32px;
+    padding-top: 24px;
   }
-
   .hero-title {
-    font-size: 44px;
+    font-size: 40px;
   }
-
   .hero-subtitle {
-    font-size: 16px;
+    font-size: 15px;
+    margin-top: 16px;
   }
-
+  .trust-badge {
+    font-size: 10px;
+    padding: 6px 14px;
+    margin-bottom: 20px;
+  }
   .desktop-br {
     display: none;
   }
@@ -1599,12 +1728,22 @@ kbd {
   .cta-row {
     flex-direction: column;
     gap: 12px;
+    margin-top: 28px;
   }
-
   .btn-primary,
   .btn-secondary {
     width: 100%;
     justify-content: center;
+  }
+  .btn-primary {
+    height: 48px;
+    font-size: 14px;
+    padding: 0 24px;
+  }
+  .btn-secondary {
+    height: 48px;
+    font-size: 14px;
+    padding: 0 24px;
   }
 
   .mascot-wrap {
@@ -1612,41 +1751,40 @@ kbd {
     top: auto;
     left: auto;
     transform: none;
-    width: 280px;
-    height: 280px;
-    margin: 32px auto 0;
+    width: 240px;
+    height: 240px;
+    margin: 24px auto 0;
   }
-
   .mascot-img {
-    width: 140px;
-    height: 140px;
+    width: 120px;
+    height: 120px;
   }
-
   .mascot-glow {
-    width: 200px;
-    height: 200px;
+    width: 180px;
+    height: 180px;
   }
-
   .orbit {
     display: none;
   }
 
-  /* Cards become stacked below mascot */
-  .float-card {
+  .float-wrap {
     position: relative;
     top: auto !important;
     left: auto !important;
     right: auto !important;
-    width: 100% !important;
+    width: calc(100% - 32px) !important;
     max-width: 400px;
-    margin: 16px auto 0;
-    transform: none !important;
+    margin: 12px auto 0;
+    animation: none !important;
   }
-
+  .float-card {
+    transform: none !important;
+    opacity: 1 !important;
+    filter: none !important;
+  }
   .card-suggestion {
     display: none;
   }
-
   .handwritten {
     display: none;
   }
@@ -1656,14 +1794,44 @@ kbd {
   .horizon {
     display: none;
   }
+  .bg-grid {
+    background-size: 48px 48px;
+  }
 }
 
+/* Small mobile */
 @media (max-width: 480px) {
   .hero-title {
-    font-size: 36px;
+    font-size: 32px;
   }
-  .trust-logo svg {
+  .hero-subtitle {
+    font-size: 14px;
+  }
+  .hero-text {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .trust-badge {
+    font-size: 9px;
+    padding: 5px 12px;
+    gap: 6px;
+  }
+  .trust-badge svg {
     display: none;
+  }
+  .float-card {
+    padding: 16px;
+  }
+  .impact-stats {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .impact-num {
+    font-size: 18px;
+  }
+  .sec-code {
+    font-size: 11px;
+    padding: 10px;
   }
 }
 </style>

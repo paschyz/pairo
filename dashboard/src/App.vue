@@ -123,4 +123,39 @@ body {
   padding: 2rem;
   overflow-y: auto;
 }
+
+@media (max-width: 768px) {
+  .app {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-right: none;
+    border-bottom: 1px solid #2a2d3a;
+    overflow-x: auto;
+    gap: 1rem;
+  }
+  .logo {
+    padding: 0;
+    border-bottom: none;
+    margin-bottom: 0;
+    flex-shrink: 0;
+  }
+  .nav-links {
+    flex-direction: row;
+    gap: 0.25rem;
+    flex-shrink: 0;
+  }
+  .nav-link {
+    white-space: nowrap;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+  }
+  .content {
+    padding: 1rem;
+  }
+}
 </style>
