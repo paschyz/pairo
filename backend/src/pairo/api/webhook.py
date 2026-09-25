@@ -66,7 +66,7 @@ async def _run_review(payload: dict[str, Any], delivery_id: str) -> None:
         code_host = GitHubClient(token)
         llm = create_reviewer(
             provider=settings.llm_provider,
-            api_key=settings.gemini_api_key,
+            api_key=settings.llm_api_key or settings.gemini_api_key,
             model=settings.llm_model_default,
             rpm_limit=settings.llm_rpm_limit,
         )

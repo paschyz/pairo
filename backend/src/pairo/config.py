@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     github_webhook_secret: str = ""
     llm_provider: str = "fake"
     gemini_api_key: str = ""
+    llm_api_key: str = ""
     llm_model_default: str = ""
     llm_model_large: str = ""
     llm_rpm_limit: int = 15

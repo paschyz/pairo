@@ -1,7 +1,8 @@
-import asyncio
 import json
 import logging
 from typing import Any
+
+import litellm
 
 from pairo.domain.finding import Axis, Finding, Source
 from pairo.domain.ports import FileDiff
@@ -11,14 +12,13 @@ from pairo.infrastructure.llm.rate_limiter import RateLimiter
 logger = logging.getLogger(__name__)
 
 _VALID_AXES = {a.value for a in Axis}
-_FALLBACK_MODELS = ["gemini-3.5-flash", "gemini-3.6-flash"]
 
 
 def _parse_findings(text: str) -> list[Finding]:
     try:
         raw: list[dict[str, Any]] = json.loads(text)
     except (json.JSONDecodeError, TypeError):
-        logger.warning("Gemini returned invalid JSON: %s", text[:200])
+        logger.warning("LLM returned invalid JSON: %s", text[:200])
         return []
 
     findings: list[Finding] = []
@@ -42,16 +42,16 @@ def _parse_findings(text: str) -> list[Finding]:
     return findings
 
 
-class GeminiReviewer:
+class LiteLLMReviewer:
     def __init__(
         self,
-        client: Any,
         model: str,
         rate_limiter: RateLimiter,
+        api_key: str = "",
     ) -> None:
-        self._client = client
         self._model = model
         self._rate_limiter = rate_limiter
+        self._api_key = api_key or None
         self.last_input_tokens: int = 0
         self.last_output_tokens: int = 0
         self.model_name: str = model
@@ -64,25 +64,21 @@ class GeminiReviewer:
         language: str,
     ) -> list[Finding]:
         prompt = build_prompt(files, existing_findings, axes, language)
-        models = [self._model] + [m for m in _FALLBACK_MODELS if m != self._model]
-        for model in models:
-            try:
-                await self._rate_limiter.acquire()
-                response = await self._client.aio.models.generate_content(
-                    model=model,
-                    contents=prompt,
-                    config={"response_mime_type": "application/json"},
-                )
-                self.last_input_tokens = (
-                    response.usage_metadata.prompt_token_count or 0
-                )
-                self.last_output_tokens = (
-                    response.usage_metadata.candidates_token_count or 0
-                )
-                self.model_name = model
-                return _parse_findings(response.text)
-            except Exception:
-                logger.warning("Gemini model %s failed, trying next", model)
-                await asyncio.sleep(1)
-        logger.exception("All Gemini models failed")
-        return []
+        try:
+            await self._rate_limiter.acquire()
+            response = await litellm.acompletion(
+                model=self._model,
+                messages=[{"role": "user", "content": prompt}],
+                response_format={"type": "json_object"},
+                api_key=self._api_key,
+            )
+            usage = response.usage
+            self.last_input_tokens = usage.prompt_tokens or 0 if usage else 0
+            self.last_output_tokens = (
+                usage.completion_tokens or 0 if usage else 0
+            )
+            text = response.choices[0].message.content or ""
+            return _parse_findings(text)
+        except Exception:
+            logger.exception("LiteLLM call failed for model %s", self._model)
+            return []
