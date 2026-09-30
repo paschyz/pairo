@@ -12,6 +12,7 @@ export interface ReviewSummary {
   input_tokens: number
   output_tokens: number
   total_findings: number
+  pr_created_at: string | null
   created_at: string | null
 }
 
@@ -24,7 +25,15 @@ export interface Finding {
   source: string
 }
 
+export interface ReviewHistoryItem {
+  id: number
+  head_sha: string
+  total_findings: number
+  created_at: string | null
+}
+
 export interface ReviewDetail extends Omit<ReviewSummary, 'total_findings'> {
+  history: ReviewHistoryItem[]
   findings: Finding[]
 }
 

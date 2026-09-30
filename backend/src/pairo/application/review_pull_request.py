@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from typing import Any, Protocol
 
 from pairo.domain.decision import DecisionStatus
@@ -111,6 +112,7 @@ class ReviewPullRequest:
         action: str,
         before_sha: str | None = None,
         delivery_id: str = "",
+        pr_created_at: datetime | None = None,
     ) -> None:
         config_raw = await self._code_host.get_repo_file(
             owner, repo, ".pairo.yml", head_sha
@@ -184,6 +186,7 @@ class ReviewPullRequest:
             repo=repo,
             pr_number=pr_number,
             head_sha=head_sha,
+            pr_created_at=pr_created_at,
             model=getattr(self._llm, "model_name", None),
             input_tokens=self._llm.last_input_tokens,
             output_tokens=self._llm.last_output_tokens,

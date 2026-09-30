@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useReviewStore } from '@/stores/reviews'
+import { formatDateTime, timeAgo } from '@/utils/time'
 
 const route = useRoute()
 const store = useReviewStore()
 
-onMounted(() => store.fetchReview(Number(route.params.id)))
+watch(() => route.params.id, (id) => store.fetchReview(Number(id)), { immediate: true })
 </script>
 
 <template>
@@ -24,6 +25,29 @@ onMounted(() => store.fetchReview(Number(route.params.id)))
           <span class="meta-item">{{ store.current.head_sha?.slice(0, 7) }}</span>
         </div>
       </header>
+
+      <section class="timeline">
+        <h2>Timeline</h2>
+        <ul class="timeline-list">
+          <li v-if="store.current.pr_created_at" class="timeline-item">
+            <span class="timeline-label">PR opened</span>
+            <span class="timeline-time">
+              {{ formatDateTime(store.current.pr_created_at) }} ({{ timeAgo(store.current.pr_created_at) }})
+            </span>
+          </li>
+          <li
+            v-for="h in [...store.current.history].reverse()"
+            :key="h.id"
+            class="timeline-item"
+            :class="{ current: h.id === store.current.id }"
+          >
+            <RouterLink :to="`/reviews/${h.id}`" class="timeline-label">
+              Review {{ h.head_sha?.slice(0, 7) }} · {{ h.total_findings }} findings
+            </RouterLink>
+            <span class="timeline-time">{{ formatDateTime(h.created_at) }} ({{ timeAgo(h.created_at) }})</span>
+          </li>
+        </ul>
+      </section>
 
       <section class="findings">
         <h2>Findings ({{ store.current.findings.length }})</h2>
@@ -63,6 +87,21 @@ h1 { font-size: 1.3rem; font-weight: 600; }
   font-size: 0.7rem; padding: 0.15rem 0.4rem; border-radius: 4px;
   background: rgba(242, 140, 56, 0.15); color: #F28C38;
 }
+
+.timeline { margin-bottom: 2rem; }
+.timeline-list {
+  list-style: none; background: #161821; border: 1px solid #2a2d3a; border-radius: 8px;
+}
+.timeline-item {
+  display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  padding: 0.6rem 1rem; font-size: 0.85rem;
+}
+.timeline-item + .timeline-item { border-top: 1px solid #2a2d3a; }
+.timeline-item.current { background: #1e2030; }
+.timeline-item.current .timeline-label { font-weight: 600; }
+.timeline-label { color: #e1e4e8; text-decoration: none; }
+a.timeline-label:hover { color: #F28C38; }
+.timeline-time { color: #8b8fa3; }
 
 h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; }
 

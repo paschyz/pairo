@@ -29,7 +29,9 @@ def _db(monkeypatch: pytest.MonkeyPatch) -> SqlReviewRepository:
     return SqlReviewRepository(session)
 
 
-def _review(delivery_id: str = "d-1", n_findings: int = 1) -> Review:
+def _review(
+    delivery_id: str = "d-1", n_findings: int = 1, pr_number: int = 7
+) -> Review:
     findings = [
         Finding(
             axis=Axis.ECO,
@@ -46,7 +48,7 @@ def _review(delivery_id: str = "d-1", n_findings: int = 1) -> Review:
         delivery_id=delivery_id,
         owner="acme",
         repo="web",
-        pr_number=7,
+        pr_number=pr_number,
         head_sha="abc",
         model="gemini-3.6-flash",
         input_tokens=100,
@@ -64,8 +66,8 @@ async def test_list_reviews(
     client: AsyncClient,
     _db: SqlReviewRepository,
 ) -> None:
-    await _db.save(_review("d-1"))
-    await _db.save(_review("d-2"))
+    await _db.save(_review("d-1", pr_number=1))
+    await _db.save(_review("d-2", pr_number=2))
 
     resp = await client.get("/api/reviews")
     assert resp.status_code == 200
@@ -80,7 +82,7 @@ async def test_list_reviews_pagination(
     _db: SqlReviewRepository,
 ) -> None:
     for i in range(5):
-        await _db.save(_review(f"d-{i}"))
+        await _db.save(_review(f"d-{i}", pr_number=i))
 
     resp = await client.get("/api/reviews?offset=2&limit=2")
     assert resp.status_code == 200
@@ -129,3 +131,29 @@ async def test_stats(
     assert data["total_findings"] == 5
     assert data["total_input_tokens"] == 200
     assert data["total_output_tokens"] == 100
+
+
+async def test_list_is_one_row_per_pr_with_utc_timestamps(
+    client: AsyncClient, _db: SqlReviewRepository
+) -> None:
+    from datetime import datetime
+
+    for sha in ("a1", "b2"):
+        await _db.save(
+            Review(
+                owner="o",
+                repo="r",
+                pr_number=1,
+                head_sha=sha,
+                delivery_id=sha,
+                pr_created_at=datetime(2026, 9, 30, 8, 0, 0),
+            )
+        )
+    rows = (await client.get("/api/reviews")).json()
+    assert len(rows) == 1
+    assert rows[0]["head_sha"] == "b2"
+    assert rows[0]["created_at"].endswith("+00:00")
+    assert rows[0]["pr_created_at"] == "2026-09-30T08:00:00+00:00"
+
+    detail = (await client.get(f"/api/reviews/{rows[0]['id']}")).json()
+    assert [h["head_sha"] for h in detail["history"]] == ["b2", "a1"]
