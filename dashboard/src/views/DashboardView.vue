@@ -5,8 +5,15 @@ import { useReviewStore } from '@/stores/reviews'
 const store = useReviewStore()
 
 onMounted(async () => {
-  await Promise.all([store.fetchStats(), store.fetchReviews(0, 5)])
+  await Promise.all([store.fetchStats(), store.fetchMemoryStats(), store.fetchReviews(0, 5)])
 })
+
+const signalLabels: Record<string, string> = {
+  command: '@pairo ignore',
+  reaction: '👎 reaction',
+  resolved_unchanged: 'Resolved thread',
+  reply_llm: 'Reply',
+}
 
 function timeAgo(dateStr: string | null): string {
   if (!dateStr) return ''
@@ -44,6 +51,28 @@ function timeAgo(dateStr: string | null): string {
         <span class="stat-value">{{ store.stats.total_output_tokens.toLocaleString() }}</span>
       </div>
     </div>
+
+    <section class="rejections">
+      <div class="section-header">
+        <h2>Rejections</h2>
+        <span class="review-pr">{{ store.memory.total_rejected }} total</span>
+      </div>
+      <div v-if="store.memory.total_rejected === 0" class="empty">No rejections yet</div>
+      <div v-else class="rejection-grid">
+        <div class="stat-card">
+          <span class="stat-label">By signal</span>
+          <div v-for="(n, k) in store.memory.by_signal" :key="k" class="rejection-row">
+            <span>{{ signalLabels[k] ?? k }}</span><span>{{ n }}</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">By category</span>
+          <div v-for="(n, k) in store.memory.by_category" :key="k" class="rejection-row">
+            <span>{{ k || 'uncategorized' }}</span><span>{{ n }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <section class="recent">
       <div class="section-header">
@@ -121,6 +150,22 @@ h1 {
 .stat-value {
   font-size: 1.75rem;
   font-weight: 700;
+}
+
+.rejections {
+  margin-bottom: 2.5rem;
+}
+
+.rejection-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+
+.rejection-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
 }
 
 .section-header {
@@ -242,6 +287,9 @@ h2 {
 }
 
 @media (max-width: 480px) {
+  .rejection-grid {
+    grid-template-columns: 1fr;
+  }
   .stats-grid {
     grid-template-columns: 1fr;
   }
