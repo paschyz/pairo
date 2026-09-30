@@ -177,3 +177,17 @@ def test_parse_findings_prose_around_array() -> None:
 
 def test_parse_findings_object_wrapper() -> None:
     assert len(_parse_findings(json.dumps({"findings": [_ITEM]}))) == 1
+
+
+def test_parse_findings_coerces_string_line_numbers() -> None:
+    raw = [
+        {
+            **_ITEM,
+            "line": "10",
+            "code_suggestion": {"replacement": "x", "end_line": "11"},
+        },
+        {**_ITEM, "line": "10-12"},
+    ]
+    a, b = _parse_findings(json.dumps(raw))
+    assert (a.line, a.code_suggestion.end_line) == (10, 11)  # type: ignore[union-attr]
+    assert b.line is None

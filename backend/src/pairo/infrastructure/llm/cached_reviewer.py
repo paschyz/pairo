@@ -4,7 +4,13 @@ from dataclasses import asdict
 from typing import Any
 
 from pairo.domain.cache_key import compute_cache_key
-from pairo.domain.finding import Axis, Finding, Source, parse_code_suggestion
+from pairo.domain.finding import (
+    Axis,
+    Finding,
+    Source,
+    parse_code_suggestion,
+    parse_line,
+)
 from pairo.domain.ports import FileDiff
 from pairo.infrastructure.llm.prompt import PROMPT_VERSION
 from pairo.infrastructure.persistence.finding_cache import SqlFindingCache
@@ -112,7 +118,7 @@ def _parse_cached(raw: list[dict[str, Any]]) -> list[Finding]:
                 Finding(
                     axis=Axis(item["axis"]),
                     file=item["file"],
-                    line=item.get("line"),
+                    line=parse_line(item.get("line")),
                     issue=item["issue"],
                     suggestion=item["suggestion"],
                     source=Source.LLM,
