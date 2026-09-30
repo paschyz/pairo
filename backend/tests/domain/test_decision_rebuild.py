@@ -1,6 +1,5 @@
 """Tests for rebuilding decisions from GitHub comment markers."""
 
-
 from pairo.domain.decision import DecisionStatus
 from pairo.domain.decision_rebuild import rebuild_decisions_from_comments
 from pairo.domain.marker import build_marker

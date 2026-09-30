@@ -1,6 +1,8 @@
-from typing import Any
+from collections.abc import Iterator
+from typing import Annotated, Any
 
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, Depends, Response
+from sqlalchemy.orm import Session
 
 from pairo.infrastructure.persistence.decision_repo import (
     SqlDecisionRepository,
@@ -11,13 +13,22 @@ from pairo.infrastructure.persistence.repository import SqlReviewRepository
 router = APIRouter(prefix="/api")
 
 
-def _repo() -> SqlReviewRepository:
-    return SqlReviewRepository(get_session())
+def _session() -> Iterator[Session]:
+    session = get_session()
+    try:
+        yield session
+    finally:
+        session.close()
+
+
+_Session = Annotated[Session, Depends(_session)]
 
 
 @router.get("/reviews")
-async def list_reviews(offset: int = 0, limit: int = 20) -> list[dict[str, object]]:
-    repo = _repo()
+async def list_reviews(
+    session: _Session, offset: int = 0, limit: int = 20
+) -> list[dict[str, object]]:
+    repo = SqlReviewRepository(session)
     reviews = await repo.list_reviews(offset=offset, limit=limit)
     return [
         {
@@ -38,8 +49,8 @@ async def list_reviews(offset: int = 0, limit: int = 20) -> list[dict[str, objec
 
 
 @router.get("/reviews/{review_id}", response_model=None)
-async def get_review(review_id: int) -> dict[str, object] | Response:
-    repo = _repo()
+async def get_review(review_id: int, session: _Session) -> dict[str, object] | Response:
+    repo = SqlReviewRepository(session)
     r = await repo.get(review_id)
     if r is None:
         return Response(
@@ -74,13 +85,12 @@ async def get_review(review_id: int) -> dict[str, object] | Response:
 
 
 @router.get("/stats")
-async def stats() -> dict[str, int]:
-    repo = _repo()
+async def stats(session: _Session) -> dict[str, int]:
+    repo = SqlReviewRepository(session)
     return await repo.stats()
 
 
 @router.get("/stats/memory")
-async def memory_stats() -> dict[str, Any]:
-    session = get_session()
+async def memory_stats(session: _Session) -> dict[str, Any]:
     decision_repo = SqlDecisionRepository(session)
     return await decision_repo.memory_stats()
