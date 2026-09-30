@@ -1,5 +1,8 @@
+from pairo.domain.context_rule import NO_RULE, RuleProposal
 from pairo.domain.finding import Axis, Finding, Source
 from pairo.domain.ports import FileDiff
+
+_DURABLE_HINTS = ("always", "never", "we use", "we don't use")
 
 
 class FakeLLMReviewer:
@@ -30,3 +33,10 @@ class FakeLLMReviewer:
                 )
             )
         return findings
+
+    async def classify_rule(
+        self, reason: str, finding_text: str, file: str
+    ) -> RuleProposal:
+        if any(hint in reason.lower() for hint in _DURABLE_HINTS):
+            return RuleProposal(persist=True, confidence=0.9, rule=reason)
+        return NO_RULE

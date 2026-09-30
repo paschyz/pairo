@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
+from pairo.domain.context_rule import RuleProposal
 from pairo.domain.decision import FindingDecision
 from pairo.domain.diff import AddedLine
 from pairo.domain.finding import Finding
@@ -70,6 +71,12 @@ class LLMReviewer(Protocol):
         axes: list[str],
         language: str,
     ) -> list[Finding]: ...
+
+
+class RuleClassifier(Protocol):
+    async def classify_rule(
+        self, reason: str, finding_text: str, file: str
+    ) -> RuleProposal: ...
 
 
 class ReviewRepository(Protocol):
