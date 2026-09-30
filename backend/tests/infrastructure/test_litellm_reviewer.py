@@ -160,3 +160,20 @@ def test_parse_findings_code_suggestion() -> None:
     ]
     got = [f.code_suggestion for f in _parse_findings(json.dumps(raw))]
     assert got == [CodeSuggestion("z = 1", end_line=2), None, None]
+
+
+_ITEM = {"axis": "eco", "file": "u.py", "line": 10, "issue": "n+1", "suggestion": "join"}
+
+
+def test_parse_findings_markdown_fenced_json() -> None:
+    text = f"```json\n{json.dumps([_ITEM])}\n```"
+    assert len(_parse_findings(text)) == 1
+
+
+def test_parse_findings_prose_around_array() -> None:
+    text = f"Here you go:\n{json.dumps([_ITEM])}\nHope it helps."
+    assert len(_parse_findings(text)) == 1
+
+
+def test_parse_findings_object_wrapper() -> None:
+    assert len(_parse_findings(json.dumps({"findings": [_ITEM]}))) == 1
