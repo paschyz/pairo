@@ -2,7 +2,7 @@ from pairo.domain.finding import Finding
 from pairo.domain.ports import FileDiff
 
 # Increment when prompts change to invalidate cache
-PROMPT_VERSION = "2"
+PROMPT_VERSION = "3"
 
 _AXIS_DESCRIPTIONS: dict[str, dict[str, str]] = {
     "crafts": {
@@ -30,6 +30,12 @@ _TEMPLATES = {
             "\nRespond only in JSON, array of objects with: "
             '"axis", "file", "line", "issue", "suggestion". '
             "Empty array [] if nothing to report."
+            '\nOptionally add "code_suggestion": {"replacement": "<new code for '
+            'the line(s)>", "end_line": <last line, only if multi-line>} ONLY when '
+            "the fix is local, precise, limited to added lines (+) listed above "
+            "(consecutive lines for a range, starting at \"line\"), needs no other "
+            "file change and you are confident. Omit it for architectural issues "
+            "or large refactors."
         ),
     },
     "fr": {
@@ -42,6 +48,13 @@ _TEMPLATES = {
             "\nRéponds uniquement en JSON, tableau d'objets avec : "
             '"axis", "file", "line", "issue", "suggestion". '
             "Tableau vide [] si rien à signaler."
+            '\nAjoute optionnellement "code_suggestion": {"replacement": "<nouveau '
+            'code de la ou des lignes>", "end_line": <dernière ligne, seulement si '
+            "multi-lignes>} UNIQUEMENT si la correction est locale, précise, limitée "
+            "aux lignes ajoutées (+) listées ci-dessus (lignes consécutives pour une "
+            "plage, à partir de \"line\"), ne nécessite aucun autre fichier et que "
+            "tu es confiant. Omets-le pour un problème d'architecture ou un gros "
+            "refactor."
         ),
     },
 }

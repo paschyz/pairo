@@ -4,7 +4,7 @@ from typing import Any
 
 import litellm
 
-from pairo.domain.finding import Axis, Finding, Source
+from pairo.domain.finding import Axis, Finding, Source, parse_code_suggestion
 from pairo.domain.ports import FileDiff
 from pairo.infrastructure.llm.prompt import build_prompt
 from pairo.infrastructure.llm.rate_limiter import RateLimiter
@@ -35,6 +35,9 @@ def _parse_findings(text: str) -> list[Finding]:
                     issue=item["issue"],
                     suggestion=item["suggestion"],
                     source=Source.LLM,
+                    code_suggestion=parse_code_suggestion(
+                        item.get("code_suggestion")
+                    ),
                 )
             )
         except (KeyError, ValueError):

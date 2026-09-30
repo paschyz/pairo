@@ -145,3 +145,18 @@ async def test_litellm_reviewer_passes_api_key(mock_litellm: Mock) -> None:
 
     call_kwargs = mock_litellm.acompletion.call_args[1]
     assert call_kwargs["api_key"] == "sk-test-123"
+
+
+def test_parse_findings_code_suggestion() -> None:
+    from pairo.domain.finding import CodeSuggestion
+
+    base = {
+        "axis": "crafts", "file": "a.py", "line": 1, "issue": "x", "suggestion": "y",
+    }
+    raw = [
+        {**base, "code_suggestion": {"replacement": "z = 1", "end_line": 2}},
+        {**base, "code_suggestion": "garbage"},
+        base,
+    ]
+    got = [f.code_suggestion for f in _parse_findings(json.dumps(raw))]
+    assert got == [CodeSuggestion("z = 1", end_line=2), None, None]

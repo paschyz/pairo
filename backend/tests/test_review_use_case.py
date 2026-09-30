@@ -255,3 +255,25 @@ async def test_uses_compare_for_synchronize() -> None:
     )
 
     assert code_host.posted_review is not None
+
+
+async def test_invalid_code_suggestion_stripped_but_finding_kept() -> None:
+    from pairo.domain.finding import CodeSuggestion
+
+    files = [FileDiff("main.py", [AddedLine(1, "x = 1")])]
+    bad = Finding(
+        axis=Axis.CRAFTS, file="main.py", line=99, issue="t", suggestion="fix",
+        source=Source.LLM, code_suggestion=CodeSuggestion("y = 2"),
+    )
+    good = Finding(
+        axis=Axis.CRAFTS, file="main.py", line=1, issue="u", suggestion="fix",
+        source=Source.LLM, code_suggestion=CodeSuggestion("y = 2"),
+    )
+    code_host = FakeCodeHost(files)
+    uc = ReviewPullRequest(code_host=code_host, llm_reviewer=FakeLLM([bad, good]))
+    await uc.execute(owner="o", repo="r", pr_number=1, head_sha="abc", action="opened")
+
+    assert code_host.posted_review is not None
+    by_line = {f.line: f for f in code_host.posted_review.findings}
+    assert by_line[99].code_suggestion is None
+    assert by_line[1].code_suggestion == CodeSuggestion("y = 2")

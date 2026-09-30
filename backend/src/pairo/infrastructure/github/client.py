@@ -1,5 +1,7 @@
 import base64
 import logging
+import re
+from dataclasses import replace
 from typing import Any
 
 import httpx
@@ -40,15 +42,31 @@ def _parse_file(raw: dict[str, Any]) -> FileDiff | None:
     return FileDiff(path=filename, added_lines=added_lines, status=status)
 
 
-def _format_comment(finding: Finding) -> dict[str, Any]:
+def _fence(code: str) -> str:
+    # Fence must be longer than any backtick run inside the code.
+    longest = max((len(m) for m in re.findall(r"`+", code)), default=0)
+    return "`" * max(3, longest + 1)
+
+
+def render_review_comment(finding: Finding) -> dict[str, Any]:
+    """Build a GitHub review comment; adds a native ```suggestion block if any."""
     emoji = _AXIS_EMOJI.get(finding.axis, "")
     body = f"{emoji} **{finding.axis}** : {finding.issue}\n\n{finding.suggestion}"
-    return {
+    comment: dict[str, Any] = {
         "path": finding.file,
         "line": finding.line,
         "side": "RIGHT",
-        "body": body,
     }
+    cs = finding.code_suggestion
+    if cs is not None and cs.replacement.strip() and finding.line is not None:
+        fence = _fence(cs.replacement)
+        body += f"\n\n{fence}suggestion\n{cs.replacement}\n{fence}"
+        if cs.end_line is not None and cs.end_line != finding.line:
+            comment.update(
+                start_line=finding.line, start_side="RIGHT", line=cs.end_line
+            )
+    comment["body"] = body
+    return comment
 
 
 def _format_review_body(review: Review) -> str:
@@ -136,7 +154,7 @@ class GitHubClient:
 
         for finding in review.findings:
             if finding.line is not None:
-                comments.append(_format_comment(finding))
+                comments.append(render_review_comment(finding))
             else:
                 body_findings.append(finding)
 
@@ -153,13 +171,28 @@ class GitHubClient:
             "comments": comments,
         }
 
+        url = f"{GITHUB_API}/repos/{owner}/{repo}/pulls/{pr_number}/reviews"
+        n_sugg = sum(1 for f in review.findings if f.code_suggestion)
         async with httpx.AsyncClient() as client:
-            resp = await client.post(
-                f"{GITHUB_API}/repos/{owner}/{repo}/pulls/{pr_number}/reviews",
-                headers=self._headers,
-                json=payload,
-            )
+            resp = await client.post(url, headers=self._headers, json=payload)
+            if resp.status_code == 422 and n_sugg:
+                # A bad suggestion range must not sink the whole review:
+                # repost every finding as a plain comment.
+                logger.warning(
+                    "GitHub rejected review with %d code suggestion(s), "
+                    "retrying as plain comments: %s",
+                    n_sugg, resp.text[:300],
+                )
+                payload["comments"] = [
+                    render_review_comment(replace(f, code_suggestion=None))
+                    for f in review.findings
+                    if f.line is not None
+                ]
+                n_sugg = 0
+                resp = await client.post(url, headers=self._headers, json=payload)
             resp.raise_for_status()
+        if n_sugg:
+            logger.info("code suggestions posted=%d", n_sugg)
 
     async def get_comment(
         self, owner: str, repo: str, comment_id: int

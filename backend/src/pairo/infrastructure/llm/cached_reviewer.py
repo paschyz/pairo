@@ -1,9 +1,10 @@
 """LLM reviewer wrapper with deterministic cache."""
 
+from dataclasses import asdict
 from typing import Any
 
 from pairo.domain.cache_key import compute_cache_key
-from pairo.domain.finding import Axis, Finding, Source
+from pairo.domain.finding import Axis, Finding, Source, parse_code_suggestion
 from pairo.domain.ports import FileDiff
 from pairo.infrastructure.llm.prompt import PROMPT_VERSION
 from pairo.infrastructure.persistence.finding_cache import SqlFindingCache
@@ -87,6 +88,9 @@ class CachedLLMReviewer:
                 "line": f.line,
                 "issue": f.issue,
                 "suggestion": f.suggestion,
+                "code_suggestion": (
+                    asdict(f.code_suggestion) if f.code_suggestion else None
+                ),
             }
             for f in findings
         ]
@@ -112,6 +116,9 @@ def _parse_cached(raw: list[dict[str, Any]]) -> list[Finding]:
                     issue=item["issue"],
                     suggestion=item["suggestion"],
                     source=Source.LLM,
+                    code_suggestion=parse_code_suggestion(
+                        item.get("code_suggestion")
+                    ),
                 )
             )
         except (KeyError, ValueError):

@@ -9,6 +9,7 @@ from pairo.domain.repo_config import parse_repo_config
 from pairo.domain.review import Review
 from pairo.domain.rules.alt import check_missing_alt
 from pairo.domain.rules.contrast import check_contrast
+from pairo.domain.suggestion import sanitize_suggestions
 
 logger = logging.getLogger(__name__)
 
@@ -112,6 +113,14 @@ class ReviewPullRequest:
                 files, findings, config.axes, config.language
             )
             findings.extend(llm_findings)
+
+        proposed = sum(1 for f in findings if f.code_suggestion)
+        findings, dropped = sanitize_suggestions(findings, files)
+        if proposed:
+            logger.info(
+                "code suggestions: proposed=%d kept=%d dropped_invalid=%d",
+                proposed, proposed - dropped, dropped,
+            )
 
         # --- Memory filtering ---
         filtered_count = 0
