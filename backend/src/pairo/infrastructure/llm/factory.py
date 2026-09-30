@@ -23,7 +23,7 @@ def create_reviewer(
             api_key=api_key,
         )
     if provider == "openrouter":
-        model_name = model or "google/gemini-2.5-flash"
+        model_name = model or "anthropic/claude-haiku-4.5"
         if not model_name.startswith("openrouter/"):
             model_name = f"openrouter/{model_name}"
         return LiteLLMReviewer(

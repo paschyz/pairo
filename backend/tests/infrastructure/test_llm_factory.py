@@ -49,15 +49,15 @@ def test_unknown_provider_raises() -> None:
 
 def test_openrouter_provider_prefixes_model() -> None:
     reviewer = create_reviewer(
-        provider="openrouter", api_key="sk-or-x", model="google/gemini-2.5-flash"
+        provider="openrouter", api_key="sk-or-x", model="anthropic/claude-haiku-4.5"
     )
     assert isinstance(reviewer, LiteLLMReviewer)
-    assert reviewer._model == "openrouter/google/gemini-2.5-flash"
+    assert reviewer._model == "openrouter/anthropic/claude-haiku-4.5"
 
 
 def test_openrouter_provider_default_and_no_double_prefix() -> None:
     assert create_reviewer(provider="openrouter")._model == (
-        "openrouter/google/gemini-2.5-flash"
+        "openrouter/anthropic/claude-haiku-4.5"
     )
-    r = create_reviewer(provider="openrouter", model="openrouter/deepseek/deepseek-chat")
-    assert r._model == "openrouter/deepseek/deepseek-chat"
+    r = create_reviewer(provider="openrouter", model="openrouter/anthropic/claude-haiku-4.5")
+    assert r._model == "openrouter/anthropic/claude-haiku-4.5"
