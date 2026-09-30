@@ -90,6 +90,29 @@ def session(monkeypatch: pytest.MonkeyPatch) -> Session:
     return factory()
 
 
+class RecordingProposer:
+    calls: list[dict[str, Any]] = []
+    reply: str | None = "Rule proposed in `.pairo.md`: https://x/pull/1"
+    fail: bool = False
+
+    def __init__(self, *_: object) -> None:
+        pass
+
+    async def execute(self, **kw: Any) -> str | None:
+        if self.fail:
+            raise RuntimeError("boom")
+        self.calls.append(kw)
+        return self.reply
+
+
+@pytest.fixture
+def proposer(monkeypatch: pytest.MonkeyPatch) -> type[RecordingProposer]:
+    RecordingProposer.calls = []
+    RecordingProposer.fail = False
+    monkeypatch.setattr(webhook, "ProposeContextRule", RecordingProposer)
+    return RecordingProposer
+
+
 async def _post(client: AsyncClient, event: str, payload: dict[str, Any]) -> int:
     body = json.dumps(payload).encode()
     resp = await client.post(
@@ -98,7 +121,15 @@ async def _post(client: AsyncClient, event: str, payload: dict[str, Any]) -> int
     return resp.status_code
 
 
-def _reply_payload(text: str, parent: int = PAIRO_COMMENT_ID) -> dict[str, Any]:
+def _reply_payload(
+    text: str,
+    parent: int = PAIRO_COMMENT_ID,
+    assoc: str | None = None,
+    default_branch: str | None = None,
+) -> dict[str, Any]:
+    repository: dict[str, Any] = {"full_name": REPO}
+    if default_branch:
+        repository["default_branch"] = default_branch
     return {
         "action": "created",
         "comment": {
@@ -106,9 +137,10 @@ def _reply_payload(text: str, parent: int = PAIRO_COMMENT_ID) -> dict[str, Any]:
             "body": text,
             "user": {"login": "alice"},
             "in_reply_to_id": parent,
+            "author_association": assoc,
         },
         "pull_request": {"number": PR},
-        "repository": {"full_name": REPO},
+        "repository": repository,
         "installation": {"id": 1},
     }
 
@@ -254,3 +286,74 @@ async def test_unsigned_webhook_is_rejected(client: AsyncClient) -> None:
         headers={"X-GitHub-Event": "pull_request_review_thread"},
     )
     assert resp.status_code == 401
+
+
+async def test_trusted_ignore_with_reason_proposes_rule(
+    client: AsyncClient, session: Session, proposer: type[RecordingProposer]
+) -> None:
+    await _post(
+        client,
+        "pull_request_review_comment",
+        _reply_payload("@pairo ignore we never use jQuery", assoc="COLLABORATOR"),
+    )
+    assert len(proposer.calls) == 1
+    call = proposer.calls[0]
+    assert call["reason"] == "we never use jQuery"
+    assert "Function too long" in call["finding_text"]
+    assert "pairo:" not in call["finding_text"]  # hidden marker stripped
+    assert call["default_branch"] == "main"
+    assert (await _decision(session)).status == DecisionStatus.REJECTED
+    bodies = [b for _, b in FakeGitHub.replies]
+    assert any("Noted" in b for b in bodies)
+    assert any("Rule proposed" in b for b in bodies)
+
+
+async def test_default_branch_comes_from_the_payload(
+    client: AsyncClient, session: Session, proposer: type[RecordingProposer]
+) -> None:
+    await _post(
+        client,
+        "pull_request_review_comment",
+        _reply_payload("@pairo ignore we use Vue", assoc="OWNER", default_branch="dev"),
+    )
+    assert proposer.calls[0]["default_branch"] == "dev"
+
+
+@pytest.mark.parametrize("assoc", ["CONTRIBUTOR", "NONE", None])
+async def test_untrusted_author_rejects_but_never_proposes(
+    client: AsyncClient,
+    session: Session,
+    proposer: type[RecordingProposer],
+    assoc: str | None,
+) -> None:
+    await _post(
+        client,
+        "pull_request_review_comment",
+        _reply_payload("@pairo ignore we use Vue", assoc=assoc),
+    )
+    assert proposer.calls == []
+    assert (await _decision(session)).status == DecisionStatus.REJECTED
+
+
+async def test_ignore_without_reason_never_proposes(
+    client: AsyncClient, session: Session, proposer: type[RecordingProposer]
+) -> None:
+    await _post(
+        client,
+        "pull_request_review_comment",
+        _reply_payload("@pairo ignore", assoc="OWNER"),
+    )
+    assert proposer.calls == []
+
+
+async def test_proposal_failure_keeps_rejection_and_ack(
+    client: AsyncClient, session: Session, proposer: type[RecordingProposer]
+) -> None:
+    proposer.fail = True
+    await _post(
+        client,
+        "pull_request_review_comment",
+        _reply_payload("@pairo ignore we use Vue", assoc="OWNER"),
+    )
+    assert (await _decision(session)).status == DecisionStatus.REJECTED
+    assert any("Noted" in b for _, b in FakeGitHub.replies)

@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     dashboard_origin: str = "http://localhost:3000"
     smee_url: str = ""
     llm_cache_ttl_days: int = 30
+    context_rule_threshold: float = 0.7
 
 
 settings = Settings()

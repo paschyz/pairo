@@ -6,9 +6,11 @@ from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Request, Response
 
+from pairo.application.propose_context_rule import ProposeContextRule
 from pairo.application.review_pull_request import ReviewPullRequest
 from pairo.config import settings
 from pairo.domain.command import parse_command
+from pairo.domain.context_rule import is_trusted
 from pairo.domain.decision import DecisionSignal, DecisionStatus, FindingDecision
 from pairo.domain.marker import parse_marker
 from pairo.infrastructure.github.auth import GitHubAppAuth
@@ -58,6 +60,16 @@ def _load_private_key() -> str:
         return f.read()
 
 
+def _make_llm() -> Any:
+    return create_reviewer(
+        provider=settings.llm_provider,
+        api_key=settings.llm_api_key
+        or (settings.gemini_api_key if settings.llm_provider == "gemini" else ""),
+        model=settings.llm_model_default,
+        rpm_limit=settings.llm_rpm_limit,
+    )
+
+
 async def _run_review(payload: dict[str, Any], delivery_id: str) -> None:
     repo_full = payload["repository"]["full_name"]
     pr_number = payload["number"]
@@ -72,13 +84,7 @@ async def _run_review(payload: dict[str, Any], delivery_id: str) -> None:
         auth = GitHubAppAuth(settings.github_app_id, _load_private_key())
         token = await auth.get_installation_token(installation_id)
         code_host = GitHubClient(token)
-        llm = create_reviewer(
-            provider=settings.llm_provider,
-            api_key=settings.llm_api_key
-            or (settings.gemini_api_key if settings.llm_provider == "gemini" else ""),
-            model=settings.llm_model_default,
-            rpm_limit=settings.llm_rpm_limit,
-        )
+        llm = _make_llm()
 
         session = get_session()
         review_repo = SqlReviewRepository(session)
@@ -107,6 +113,35 @@ async def _run_review(payload: dict[str, Any], delivery_id: str) -> None:
     finally:
         if "session" in locals():
             session.close()
+
+
+async def _propose_rule(
+    code_host: GitHubClient,
+    payload: dict[str, Any],
+    parent: dict[str, Any],
+    reason: str,
+) -> None:
+    """Best effort: the rejection is already saved, a failure here must not undo it."""
+    comment = payload["comment"]
+    repo_full = payload["repository"]["full_name"]
+    owner, repo = repo_full.split("/")
+    pr_number = payload["pull_request"]["number"]
+    try:
+        uc = ProposeContextRule(code_host, _make_llm(), settings.context_rule_threshold)
+        reply = await uc.execute(
+            owner=owner,
+            repo=repo,
+            default_branch=payload["repository"].get("default_branch", "main"),
+            reason=reason,
+            finding_text=parent.get("body", "").split("<!--")[0].strip(),
+            file=parent.get("path", ""),
+        )
+        if reply:
+            await code_host.reply_to_comment(
+                owner, repo, pr_number, comment["id"], reply
+            )
+    except Exception:
+        logger.exception("Rule proposal failed for %s#%s", repo_full, pr_number)
 
 
 async def _handle_comment(payload: dict[str, Any]) -> None:
@@ -186,6 +221,13 @@ async def _handle_comment(payload: dict[str, Any]) -> None:
                     )
         finally:
             session.close()
+
+        if (
+            cmd.action == "ignore"
+            and cmd.reason
+            and is_trusted(comment.get("author_association"))
+        ):
+            await _propose_rule(code_host, payload, parent, cmd.reason)
 
         logger.info("Command %s processed for %s#%s", cmd.action, repo_full, pr_number)
     except Exception:
