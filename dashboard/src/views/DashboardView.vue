@@ -15,7 +15,9 @@ async function refresh() {
   }
 }
 
-onMounted(refresh)
+onMounted(() => {
+  refresh();
+});
 
 const signalLabels: Record<string, string> = {
   command: '@pairo ignore',
