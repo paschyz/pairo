@@ -25,6 +25,7 @@ class SqlReviewRepository:
                 input_tokens=review.input_tokens,
                 output_tokens=review.output_tokens,
                 co2_g=review.co2_g,
+                pr_created_at=review.pr_created_at,
             )
             for f in review.findings:
                 row.findings.append(
@@ -63,14 +64,34 @@ class SqlReviewRepository:
 
     async def list_reviews(self, offset: int = 0, limit: int = 20) -> list[Review]:
         def _list() -> list[Review]:
+            # one row per PR: its latest review
+            latest = select(func.max(ReviewRow.id)).group_by(
+                ReviewRow.owner, ReviewRow.repo, ReviewRow.pr_number
+            )
             stmt = (
                 select(ReviewRow)
-                .order_by(ReviewRow.created_at.desc())
+                .where(ReviewRow.id.in_(latest))
+                .order_by(ReviewRow.created_at.desc(), ReviewRow.id.desc())
                 .offset(offset)
                 .limit(limit)
             )
             rows = self._session.scalars(stmt).all()
             return [_to_domain(r) for r in rows]
+
+        return await asyncio.to_thread(_list)
+
+    async def list_for_pr(self, owner: str, repo: str, pr_number: int) -> list[Review]:
+        def _list() -> list[Review]:
+            stmt = (
+                select(ReviewRow)
+                .where(
+                    ReviewRow.owner == owner,
+                    ReviewRow.repo == repo,
+                    ReviewRow.pr_number == pr_number,
+                )
+                .order_by(ReviewRow.created_at.desc(), ReviewRow.id.desc())
+            )
+            return [_to_domain(r) for r in self._session.scalars(stmt).all()]
 
         return await asyncio.to_thread(_list)
 
@@ -127,6 +148,7 @@ def _to_domain(row: ReviewRow) -> Review:
         output_tokens=row.output_tokens,
         co2_g=row.co2_g,
         created_at=row.created_at,
+        pr_created_at=row.pr_created_at,
         findings=[
             Finding(
                 axis=Axis(f.axis),

@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import logging
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Request, Response
@@ -33,6 +34,13 @@ def _verify_signature(payload: bytes, signature: str | None) -> bool:
         settings.github_webhook_secret.encode(), payload, hashlib.sha256
     ).hexdigest()
     return hmac.compare_digest(f"sha256={expected}", signature)
+
+
+def _parse_github_time(value: str | None) -> datetime | None:
+    """GitHub ISO timestamp -> naive UTC (matches the DateTime columns)."""
+    if not value:
+        return None
+    return datetime.fromisoformat(value).astimezone(UTC).replace(tzinfo=None)
 
 
 def _ignored(detail: str) -> Response:
@@ -91,6 +99,7 @@ async def _run_review(payload: dict[str, Any], delivery_id: str) -> None:
             action=action,
             before_sha=before_sha,
             delivery_id=delivery_id,
+            pr_created_at=_parse_github_time(pr.get("created_at")),
         )
         logger.info("Review posted for %s#%s", repo_full, pr_number)
     except Exception:

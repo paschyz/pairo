@@ -40,6 +40,7 @@ class ReviewRow(Base):
         server_default=func.now(),
         nullable=False,
     )
+    pr_created_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     findings: Mapped[list["FindingRow"]] = relationship(
         back_populates="review",

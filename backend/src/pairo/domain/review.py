@@ -19,6 +19,7 @@ class Review:
     pr_number: int = 0
     head_sha: str = ""
     created_at: datetime | None = None
+    pr_created_at: datetime | None = None
     memory_filtered: int = 0
     memory_summary: str = ""
 

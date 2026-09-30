@@ -78,14 +78,14 @@ async def test_exists(repo: SqlReviewRepository) -> None:
 
 async def test_list_reviews(repo: SqlReviewRepository) -> None:
     for i in range(3):
-        await repo.save(_review(delivery_id=f"d-{i}"))
+        await repo.save(_review(delivery_id=f"d-{i}", pr_number=i))
     reviews = await repo.list_reviews(offset=0, limit=10)
     assert len(reviews) == 3
 
 
 async def test_list_reviews_pagination(repo: SqlReviewRepository) -> None:
     for i in range(5):
-        await repo.save(_review(delivery_id=f"d-{i}"))
+        await repo.save(_review(delivery_id=f"d-{i}", pr_number=i))
     page = await repo.list_reviews(offset=2, limit=2)
     assert len(page) == 2
 
