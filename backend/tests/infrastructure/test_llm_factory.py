@@ -63,3 +63,12 @@ def test_openrouter_provider_default_and_no_double_prefix() -> None:
         provider="openrouter", model="openrouter/anthropic/claude-haiku-4.5"
     )
     assert r._model == "openrouter/anthropic/claude-haiku-4.5"
+
+
+def test_reviewers_share_one_rate_limiter() -> None:
+    # The RPM quota belongs to the API key, not to one webhook: every reviewer
+    # built in this process must count against the same limiter.
+    a = create_reviewer(provider="gemini", rpm_limit=15)
+    b = create_reviewer(provider="gemini", rpm_limit=15)
+    assert a is not b
+    assert a._rate_limiter is b._rate_limiter
