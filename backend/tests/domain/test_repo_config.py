@@ -6,7 +6,7 @@ def test_defaults_when_no_content() -> None:
     assert cfg.axes == ["crafts", "eco", "a11y"]
     assert cfg.max_image_kb == 200
     assert cfg.ignore == []
-    assert cfg.language == "fr"
+    assert cfg.language == "en"
 
 
 def test_parse_valid_yaml() -> None:
@@ -27,7 +27,7 @@ def test_partial_yaml_uses_defaults() -> None:
     cfg = parse_repo_config("axes: [eco]")
     assert cfg.axes == ["eco"]
     assert cfg.max_image_kb == 200
-    assert cfg.language == "fr"
+    assert cfg.language == "en"
 
 
 def test_invalid_yaml_returns_defaults_with_error() -> None:

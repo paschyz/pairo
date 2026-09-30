@@ -72,12 +72,12 @@ def check_contrast(path: str, added_lines: list[AddedLine]) -> list[Finding]:
                     file=path,
                     line=line.number,
                     issue=(
-                        f"Ratio de contraste insuffisant"
+                        f"Insufficient contrast ratio"
                         f" ({ratio:.1f}:1 < {_WCAG_AA_THRESHOLD}:1)"
                     ),
                     suggestion=(
-                        "Ajuster les couleurs pour atteindre"
-                        " un ratio d'au moins 4.5:1 (AA)"
+                        "Adjust the colors to reach"
+                        " a ratio of at least 4.5:1 (AA)"
                     ),
                     source=Source.RULE,
                 )

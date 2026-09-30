@@ -71,16 +71,16 @@ def render_review_comment(finding: Finding) -> dict[str, Any]:
 
 def _format_review_body(review: Review) -> str:
     if not review.findings:
-        return "✅ Rien à signaler."
+        return "✅ Nothing to report."
 
-    lines = ["**Résumé Pairo**\n"]
+    lines = ["**Pairo summary**\n"]
     counts = review.counts_by_axis()
     for axis, count in counts.items():
         emoji = _AXIS_EMOJI.get(axis, "")
         lines.append(f"- {emoji} {axis} : {count} finding(s)")
 
     if review.co2_g is not None:
-        lines.append(f"🌍 CO₂ estimé : {review.co2_g:.4f} g")
+        lines.append(f"🌍 Estimated CO₂ : {review.co2_g:.4f} g")
     if review.memory_summary:
         lines.append(f"\n🧠 {review.memory_summary}")
 
@@ -160,7 +160,7 @@ class GitHubClient:
 
         body = _format_review_body(review)
         if body_findings:
-            body += "\n\n**Commentaires globaux :**\n"
+            body += "\n\n**General comments :**\n"
             for f in body_findings:
                 emoji = _AXIS_EMOJI.get(f.axis, "")
                 body += f"\n- {emoji} `{f.file}` : {f.issue}"

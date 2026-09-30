@@ -6,14 +6,14 @@ from pairo.infrastructure.llm.prompt import build_prompt
 
 def test_includes_file_content() -> None:
     files = [FileDiff("app.py", [AddedLine(1, "x = 1")])]
-    prompt = build_prompt(files, [], ["crafts"], "fr")
+    prompt = build_prompt(files, [], ["crafts"], "en")
     assert "app.py" in prompt
     assert "x = 1" in prompt
 
 
 def test_includes_requested_axes() -> None:
     files = [FileDiff("app.py", [AddedLine(1, "x = 1")])]
-    prompt = build_prompt(files, [], ["crafts", "eco"], "fr")
+    prompt = build_prompt(files, [], ["crafts", "eco"], "en")
     assert "crafts" in prompt
     assert "eco" in prompt
     assert "a11y" not in prompt
@@ -31,12 +31,12 @@ def test_mentions_existing_findings() -> None:
             source=Source.RULE,
         )
     ]
-    prompt = build_prompt(files, existing, ["a11y"], "fr")
+    prompt = build_prompt(files, existing, ["a11y"], "en")
     assert "missing alt" in prompt
 
 
 def test_empty_files_still_produces_prompt() -> None:
-    prompt = build_prompt([], [], ["crafts"], "fr")
+    prompt = build_prompt([], [], ["crafts"], "en")
     assert len(prompt) > 0
 
 
@@ -45,12 +45,17 @@ def test_multiple_files() -> None:
         FileDiff("a.py", [AddedLine(1, "a = 1")]),
         FileDiff("b.py", [AddedLine(2, "b = 2")]),
     ]
-    prompt = build_prompt(files, [], ["crafts"], "fr")
+    prompt = build_prompt(files, [], ["crafts"], "en")
     assert "a.py" in prompt
     assert "b.py" in prompt
 
 
 def test_output_format_instruction() -> None:
     files = [FileDiff("app.py", [AddedLine(1, "x = 1")])]
-    prompt = build_prompt(files, [], ["crafts"], "fr")
+    prompt = build_prompt(files, [], ["crafts"], "en")
     assert "JSON" in prompt
+
+
+def test_non_english_language_adds_instruction() -> None:
+    assert '"fr"' in build_prompt([], [], ["crafts"], "fr")
+    assert "language with code" not in build_prompt([], [], ["crafts"], "en")

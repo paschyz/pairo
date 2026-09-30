@@ -1,6 +1,6 @@
 # Pairo Landing Page — Design Specification
 
-## 1. Direction générale
+## 1. General direction
 
 Style:
 

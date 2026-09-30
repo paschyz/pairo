@@ -95,7 +95,7 @@ async def test_litellm_reviewer_calls_api(mock_litellm: Mock) -> None:
         rate_limiter=RateLimiter(rpm=15),
     )
     files = [FileDiff("app.py", [AddedLine(1, "x = 1")])]
-    findings = await reviewer.review(files, [], ["crafts"], "fr")
+    findings = await reviewer.review(files, [], ["crafts"], "en")
 
     assert len(findings) == 1
     assert findings[0].source == Source.LLM
@@ -111,7 +111,7 @@ async def test_litellm_reviewer_tracks_tokens(mock_litellm: Mock) -> None:
         rate_limiter=RateLimiter(rpm=15),
     )
     files = [FileDiff("app.py", [AddedLine(1, "x = 1")])]
-    await reviewer.review(files, [], ["crafts"], "fr")
+    await reviewer.review(files, [], ["crafts"], "en")
 
     assert reviewer.last_input_tokens == 100
     assert reviewer.last_output_tokens == 50
@@ -126,7 +126,7 @@ async def test_litellm_reviewer_returns_empty_on_error(mock_litellm: Mock) -> No
         rate_limiter=RateLimiter(rpm=15),
     )
     files = [FileDiff("app.py", [AddedLine(1, "x = 1")])]
-    findings = await reviewer.review(files, [], ["crafts"], "fr")
+    findings = await reviewer.review(files, [], ["crafts"], "en")
 
     assert findings == []
 
@@ -141,7 +141,7 @@ async def test_litellm_reviewer_passes_api_key(mock_litellm: Mock) -> None:
         api_key="sk-test-123",
     )
     files = [FileDiff("app.py", [AddedLine(1, "x = 1")])]
-    await reviewer.review(files, [], ["crafts"], "fr")
+    await reviewer.review(files, [], ["crafts"], "en")
 
     call_kwargs = mock_litellm.acompletion.call_args[1]
     assert call_kwargs["api_key"] == "sk-test-123"

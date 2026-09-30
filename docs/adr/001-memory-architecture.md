@@ -1,50 +1,50 @@
-# ADR 001 — Architecture de la mémoire Pairo
+# ADR 001 — Pairo memory architecture
 
-**Statut :** Accepté
-**Date :** 2026-09-16
+**Status:** Accepted
+**Date:** 2026-09-16
 
-## Contexte
+## Context
 
-Les utilisateurs de reviewers IA se plaignent de trois problèmes :
-- Le bot re-suggère ce qui a été explicitement rejeté
-- Chaque push génère des commentaires sur du code inchangé
-- Relancer sans changement donne des résultats différents
+Users of AI reviewers complain about three problems:
+- The bot re-suggests what was explicitly rejected
+- Every push generates comments on unchanged code
+- Re-running without changes gives different results
 
-## Décisions
+## Decisions
 
-### 1. Empreinte basée sur le contenu, pas sur les numéros de ligne
+### 1. Content-based fingerprint, not line numbers
 
-Les numéros de ligne changent à chaque push. L'empreinte utilise le code normalisé (whitespace-insensitive, blank-line-tolerant) + axe + catégorie + chemin. Un déplacement de code sans modification garde la même empreinte.
+Line numbers change on every push. The fingerprint uses normalized code (whitespace-insensitive, blank-line-tolerant) + axis + category + path. Moving code without modifying it keeps the same fingerprint.
 
-**Alternative rejetée :** empreinte par numéro de ligne — trop fragile, invalide à chaque rebase.
+**Rejected alternative:** fingerprint by line number — too fragile, invalidated on every rebase.
 
-### 2. Signaux déterministes prioritaires sur l'interprétation LLM
+### 2. Deterministic signals take priority over LLM interpretation
 
-Ordre de priorité :
-1. Commandes explicites (`@pairo ignore/valid`)
-2. Réactions (thumbs-down)
-3. Fil résolu sans changement de code
-4. Classification LLM des réponses libres (optionnel, désactivé par défaut)
+Priority order:
+1. Explicit commands (`@pairo ignore/valid`)
+2. Reactions (thumbs-down)
+3. Thread resolved without a code change
+4. LLM classification of free-form replies (optional, disabled by default)
 
-Les trois premiers signaux sont gratuits, déterministes, et ne consomment pas de quota. Le LLM n'intervient que pour les cas ambigus, et uniquement si activé.
+The first three signals are free, deterministic, and consume no quota. The LLM only steps in for ambiguous cases, and only if enabled.
 
-**Alternative rejetée :** tout classifier par LLM — coûteux, non déterministe, résultats imprévisibles.
+**Rejected alternative:** classify everything with the LLM — costly, non-deterministic, unpredictable results.
 
-### 3. Mémoire visible : marqueurs + config versionnée
+### 3. Visible memory: markers + versioned config
 
-Chaque commentaire contient un marqueur HTML invisible avec l'empreinte. Si la base est perdue, les décisions se reconstruisent depuis GitHub. Les règles persistantes passent par `.pairo.yml` (versionné, visible, humain décide).
+Every comment contains an invisible HTML marker with the fingerprint. If the database is lost, decisions are rebuilt from GitHub. Persistent rules go through `.pairo.yml` (versioned, visible, a human decides).
 
-**Alternative rejetée :** apprentissage automatique de règles repo-wide — opaque, non réversible, pas de contrôle humain.
+**Rejected alternative:** automatic learning of repo-wide rules — opaque, irreversible, no human control.
 
-### 4. Cache déterministe par versionnement des prompts
+### 4. Deterministic cache via prompt versioning
 
-La clé de cache inclut `PROMPT_VERSION`, le nom du modèle, et la config. Tout changement invalide naturellement le cache. TTL configurable en sécurité supplémentaire.
+The cache key includes `PROMPT_VERSION`, the model name, and the config. Any change naturally invalidates the cache. Configurable TTL as an extra safety net.
 
-**Alternative rejetée :** cache par hash du prompt complet — fragile aux reformulations mineures qui ne changent pas la sémantique.
+**Rejected alternative:** cache by full-prompt hash — fragile to minor rewordings that do not change the semantics.
 
-## Conséquences
+## Consequences
 
-- Les rejets sont immédiats et gratuits (pas d'appel LLM)
-- Le cache réduit les appels LLM sur les re-reviews
-- La mémoire est transparente et contrôlable
-- Pas de magie : l'humain garde le contrôle via commandes et `.pairo.yml`
+- Rejections are immediate and free (no LLM call)
+- The cache reduces LLM calls on re-reviews
+- Memory is transparent and controllable
+- No magic: the human keeps control through commands and `.pairo.yml`

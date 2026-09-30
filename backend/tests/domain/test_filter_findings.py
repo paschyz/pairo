@@ -83,5 +83,5 @@ class TestFilterSummaryLine:
         from pairo.domain.filter_findings import memory_summary_line
 
         assert memory_summary_line(0) == ""
-        assert "1 remarque" in memory_summary_line(1)
-        assert "3 remarques" in memory_summary_line(3)
+        assert "1 previously dismissed comment" in memory_summary_line(1)
+        assert "3 previously dismissed comments" in memory_summary_line(3)

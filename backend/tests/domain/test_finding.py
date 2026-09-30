@@ -6,8 +6,8 @@ def test_finding_creation() -> None:
         axis=Axis.A11Y,
         file="src/App.vue",
         line=42,
-        issue="<img> sans attribut alt",
-        suggestion='Ajouter alt="description"',
+        issue="<img> without alt attribute",
+        suggestion='Add alt="description"',
         source=Source.RULE,
     )
     assert f.axis == Axis.A11Y
@@ -21,8 +21,8 @@ def test_finding_global_has_no_line() -> None:
         axis=Axis.ECO,
         file="assets/hero.png",
         line=None,
-        issue="Image dépasse 200 Ko",
-        suggestion="Compresser l'image",
+        issue="Image exceeds 200 KB",
+        suggestion="Compress the image",
         source=Source.RULE,
     )
     assert f.line is None

@@ -145,7 +145,7 @@ async def _handle_comment(payload: dict[str, Any]) -> None:
                 await decision_repo.save(decision)
                 await code_host.reply_to_comment(
                     owner, repo, pr_number, comment["id"],
-                    "\U0001f44d Noté, je ne reposerai pas cette remarque sur cette PR.",
+                    "\U0001f44d Noted, I will not raise this comment again on this PR.",
                 )
             elif cmd.action == "valid":
                 existing = await decision_repo.get_by_fingerprint(
@@ -166,7 +166,7 @@ async def _handle_comment(payload: dict[str, Any]) -> None:
                     await decision_repo.save(decision)
                     await code_host.reply_to_comment(
                         owner, repo, pr_number, comment["id"],
-                        "\U0001f44d Remarque réactivée.",
+                        "\U0001f44d Comment re-enabled.",
                     )
         finally:
             session.close()

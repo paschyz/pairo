@@ -24,8 +24,8 @@ class FakeLLMReviewer:
                     axis=axis,
                     file=f.path,
                     line=f.added_lines[0].number,
-                    issue="[fake] Finding détecté par le LLM factice",
-                    suggestion="[fake] Suggestion du LLM factice",
+                    issue="[fake] Finding detected by the fake LLM",
+                    suggestion="[fake] Suggestion from the fake LLM",
                     source=Source.LLM,
                 )
             )

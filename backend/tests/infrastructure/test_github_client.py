@@ -151,5 +151,5 @@ async def test_post_review_no_findings() -> None:
     import json
 
     payload = json.loads(route.calls[0].request.content)
-    assert "rien à signaler" in payload["body"].lower()
+    assert "nothing to report" in payload["body"].lower()
     assert payload["comments"] == []

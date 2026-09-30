@@ -45,7 +45,7 @@ async def test_cache_miss_calls_llm(cache: SqlFindingCache) -> None:
     inner = FakeLLMReviewer()
     reviewer = CachedLLMReviewer(inner, cache, model="fake", axes=["crafts"])
 
-    findings = await reviewer.review(_files(), [], ["crafts"], "fr")
+    findings = await reviewer.review(_files(), [], ["crafts"], "en")
     assert len(findings) > 0
     assert reviewer.cache_hits == 0
 
@@ -55,11 +55,11 @@ async def test_cache_hit_skips_llm(cache: SqlFindingCache) -> None:
     reviewer = CachedLLMReviewer(inner, cache, model="fake", axes=["crafts"])
 
     # First call populates cache
-    first = await reviewer.review(_files(), [], ["crafts"], "fr")
+    first = await reviewer.review(_files(), [], ["crafts"], "en")
     assert reviewer.cache_hits == 0
 
     # Second call with same input should hit cache
-    second = await reviewer.review(_files(), [], ["crafts"], "fr")
+    second = await reviewer.review(_files(), [], ["crafts"], "en")
     assert reviewer.cache_hits == 1
     assert len(second) == len(first)
     # Cached call should report 0 tokens used
@@ -74,10 +74,10 @@ async def test_different_prompt_version_misses_cache(
     r1 = CachedLLMReviewer(
         inner, cache, model="fake", axes=["crafts"], prompt_version="1"
     )
-    await r1.review(_files(), [], ["crafts"], "fr")
+    await r1.review(_files(), [], ["crafts"], "en")
 
     r2 = CachedLLMReviewer(
         inner, cache, model="fake", axes=["crafts"], prompt_version="2"
     )
-    await r2.review(_files(), [], ["crafts"], "fr")
+    await r2.review(_files(), [], ["crafts"], "en")
     assert r2.cache_hits == 0

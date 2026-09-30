@@ -33,13 +33,10 @@ def memory_summary_line(filtered_count: int) -> str:
     """One-line summary for the review body."""
     if filtered_count == 0:
         return ""
-    noun = "remarque" if filtered_count == 1 else "remarques"
-    plural = filtered_count > 1
-    s = "s" if plural else ""
-    verb = "ont" if plural else "a"
+    noun = "comment" if filtered_count == 1 else "comments"
     return (
-        f"{filtered_count} {noun} déjà écartée{s}"
-        f" sur cette PR n'{verb} pas été reposée{s}."
+        f"{filtered_count} previously dismissed {noun}"
+        f" on this PR {'was' if filtered_count == 1 else 'were'} not reposted."
     )
 
 
@@ -53,9 +50,9 @@ def suggest_persistent_rule(
     if rejected_pr_count < _SUGGEST_THRESHOLD:
         return ""
     return (
-        f"Cette remarque (`{qualified_category}`) a été écartée"
-        f" sur {rejected_pr_count} PR. Pour ne plus la recevoir,"
-        f" ajoutez à `.pairo.yml` :\n"
+        f"This comment (`{qualified_category}`) was dismissed"
+        f" on {rejected_pr_count} PRs. To stop receiving it,"
+        f" add to `.pairo.yml`:\n"
         f"```yaml\n"
         f'ignore_categories: ["{qualified_category}"]\n'
         f"```"

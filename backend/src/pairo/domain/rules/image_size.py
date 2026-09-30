@@ -13,8 +13,8 @@ def check_image_size(path: str, *, size_kb: int, max_kb: int) -> list[Finding]:
             axis=Axis.ECO,
             file=path,
             line=None,
-            issue=f"Image de {size_kb} Ko dépasse la limite de {max_kb} Ko",
-            suggestion="Compresser ou convertir en format plus léger (WebP, AVIF)",
+            issue=f"Image of {size_kb} KB exceeds the {max_kb} KB limit",
+            suggestion="Compress or convert to a lighter format (WebP, AVIF)",
             source=Source.RULE,
         )
     ]
