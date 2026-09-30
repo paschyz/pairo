@@ -47,3 +47,17 @@ def test_should_ignore_matching_path() -> None:
     assert cfg.should_ignore("package-lock.json") is False
     assert cfg.should_ignore("yarn.lock") is True
     assert cfg.should_ignore("src/main.ts") is False
+
+
+def test_context_propose_rules_defaults_to_true() -> None:
+    assert parse_repo_config(None).context_propose_rules is True
+    assert parse_repo_config("axes: [crafts]\n").context_propose_rules is True
+
+
+def test_context_propose_rules_can_be_disabled() -> None:
+    cfg = parse_repo_config("context:\n  propose_rules: false\n")
+    assert cfg.context_propose_rules is False
+
+
+def test_context_section_not_a_mapping_falls_back_to_default() -> None:
+    assert parse_repo_config("context: nope\n").context_propose_rules is True
