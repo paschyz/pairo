@@ -70,9 +70,7 @@ def _sign(body: bytes) -> str:
     return f"sha256={sig}"
 
 
-def _pr_payload(
-    action: str = "opened", before: str | None = None
-) -> dict[str, object]:
+def _pr_payload(action: str = "opened", before: str | None = None) -> dict[str, object]:
     payload: dict[str, object] = {
         "action": action,
         "number": 1,

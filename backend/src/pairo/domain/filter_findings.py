@@ -43,9 +43,7 @@ def memory_summary_line(filtered_count: int) -> str:
 _SUGGEST_THRESHOLD = 3
 
 
-def suggest_persistent_rule(
-    qualified_category: str, rejected_pr_count: int
-) -> str:
+def suggest_persistent_rule(qualified_category: str, rejected_pr_count: int) -> str:
     """Suggest adding to .pairo.yml if a category is rejected often."""
     if rejected_pr_count < _SUGGEST_THRESHOLD:
         return ""

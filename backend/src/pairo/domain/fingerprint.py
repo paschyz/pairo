@@ -3,6 +3,8 @@
 import hashlib
 import re
 
+from pairo.domain.finding import Finding
+
 
 def _normalize_lines(lines: list[str]) -> str:
     """Strip leading/trailing whitespace, collapse multiple spaces, drop blanks."""
@@ -45,3 +47,20 @@ def compute_fingerprint(
 
     payload = "\0".join(parts)
     return hashlib.sha256(payload.encode()).hexdigest()[:16]
+
+
+def fingerprint_for(finding: Finding) -> str:
+    """Fingerprint used for memory filtering and the comment marker (must match)."""
+    # ponytail: simple fp with issue as context,
+    # proper context lines when diff tracking lands
+    return compute_fingerprint(
+        axis=finding.axis.value,
+        category="",
+        file_path=finding.file,
+        context_lines=[finding.issue],
+        rule_id=(
+            f"{finding.axis.value}.{finding.source.value}"
+            if finding.source.value == "rule"
+            else None
+        ),
+    )

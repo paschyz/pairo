@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from pairo.domain.decision import DecisionSignal, DecisionStatus, FindingDecision
-from pairo.infrastructure.persistence.models import Base
 from pairo.infrastructure.persistence.decision_repo import SqlDecisionRepository
+from pairo.infrastructure.persistence.models import Base
 
 
 @pytest.fixture

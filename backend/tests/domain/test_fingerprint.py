@@ -1,4 +1,3 @@
-import pytest
 
 from pairo.domain.fingerprint import compute_fingerprint
 
@@ -67,18 +66,27 @@ class TestFingerprint:
     def test_with_rule_id(self):
         """Deterministic rules include rule_id in fingerprint."""
         fp1 = compute_fingerprint(
-            "a11y", "img-alt", "index.html", ["<img src='x'>"],
+            "a11y",
+            "img-alt",
+            "index.html",
+            ["<img src='x'>"],
             rule_id="a11y.img-alt",
         )
         fp2 = compute_fingerprint(
-            "a11y", "img-alt", "index.html", ["<img src='x'>"],
+            "a11y",
+            "img-alt",
+            "index.html",
+            ["<img src='x'>"],
         )
         assert fp1 != fp2
 
     def test_no_context_lines_with_blob_sha(self):
         """Findings without line (e.g. image too big): file + rule + blob sha."""
         fp = compute_fingerprint(
-            "eco", "image-size", "logo.png", [],
+            "eco",
+            "image-size",
+            "logo.png",
+            [],
             rule_id="eco.image-size",
             blob_sha="abc123def456",
         )
@@ -86,11 +94,19 @@ class TestFingerprint:
 
     def test_blob_sha_change_different_fingerprint(self):
         fp1 = compute_fingerprint(
-            "eco", "image-size", "logo.png", [],
-            rule_id="eco.image-size", blob_sha="aaa",
+            "eco",
+            "image-size",
+            "logo.png",
+            [],
+            rule_id="eco.image-size",
+            blob_sha="aaa",
         )
         fp2 = compute_fingerprint(
-            "eco", "image-size", "logo.png", [],
-            rule_id="eco.image-size", blob_sha="bbb",
+            "eco",
+            "image-size",
+            "logo.png",
+            [],
+            rule_id="eco.image-size",
+            blob_sha="bbb",
         )
         assert fp1 != fp2

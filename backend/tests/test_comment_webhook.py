@@ -14,7 +14,9 @@ def _sign(payload: bytes) -> str:
     return f"sha256={sig}"
 
 
-def _headers(payload: bytes, *, event: str = "pull_request_review_comment") -> dict[str, str]:
+def _headers(
+    payload: bytes, *, event: str = "pull_request_review_comment"
+) -> dict[str, str]:
     return {
         "X-Hub-Signature-256": _sign(payload),
         "X-GitHub-Event": event,
@@ -51,7 +53,10 @@ async def test_comment_webhook_accepts_pairo_command(client: AsyncClient) -> Non
 
 
 async def test_comment_webhook_ignores_non_command(client: AsyncClient) -> None:
-    payload = {**COMMENT_PAYLOAD, "comment": {**COMMENT_PAYLOAD["comment"], "body": "Just a regular reply"}}
+    payload = {
+        **COMMENT_PAYLOAD,
+        "comment": {**COMMENT_PAYLOAD["comment"], "body": "Just a regular reply"},
+    }
     body = json.dumps(payload).encode()
     resp = await client.post("/webhook", content=body, headers=_headers(body))
     assert resp.status_code == 200

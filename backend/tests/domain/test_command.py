@@ -23,7 +23,7 @@ class TestParseCommand:
         assert cmd.reason is None
 
     def test_case_insensitive(self):
-        assert parse_command("@Pairo Ignore")  is not None
+        assert parse_command("@Pairo Ignore") is not None
         assert parse_command("@PAIRO VALID") is not None
 
     def test_embedded_in_text(self):

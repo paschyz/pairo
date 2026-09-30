@@ -8,27 +8,19 @@ from pairo.domain.classify_reply import (
 
 class TestReplyClassification:
     def test_rejects_high_confidence(self):
-        c = ReplyClassification(
-            fingerprint="fp1", verdict="rejects", confidence=0.9
-        )
+        c = ReplyClassification(fingerprint="fp1", verdict="rejects", confidence=0.9)
         assert c.is_rejection() is True
 
     def test_rejects_low_confidence_ignored(self):
-        c = ReplyClassification(
-            fingerprint="fp1", verdict="rejects", confidence=0.5
-        )
+        c = ReplyClassification(fingerprint="fp1", verdict="rejects", confidence=0.5)
         assert c.is_rejection() is False
 
     def test_accepts_not_rejection(self):
-        c = ReplyClassification(
-            fingerprint="fp1", verdict="accepts", confidence=0.95
-        )
+        c = ReplyClassification(fingerprint="fp1", verdict="accepts", confidence=0.95)
         assert c.is_rejection() is False
 
     def test_unclear_not_rejection(self):
-        c = ReplyClassification(
-            fingerprint="fp1", verdict="unclear", confidence=0.9
-        )
+        c = ReplyClassification(fingerprint="fp1", verdict="unclear", confidence=0.9)
         assert c.is_rejection() is False
 
 

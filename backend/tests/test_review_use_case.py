@@ -21,9 +21,7 @@ class FakeCodeHost:
     ) -> list[FileDiff]:
         return self._files
 
-    async def get_file_size_kb(
-        self, owner: str, repo: str, path: str, ref: str
-    ) -> int:
+    async def get_file_size_kb(self, owner: str, repo: str, path: str, ref: str) -> int:
         return 50
 
     async def post_review(
@@ -73,7 +71,9 @@ class FakeReviewRepo:
         return next((r for r in self.saved if r.id == review_id), None)
 
     async def list_reviews(
-        self, offset: int = 0, limit: int = 20,
+        self,
+        offset: int = 0,
+        limit: int = 20,
     ) -> list[Review]:
         return self.saved[offset : offset + limit]
 
@@ -147,11 +147,17 @@ async def test_saves_review_to_repository() -> None:
     repo = FakeReviewRepo()
 
     uc = ReviewPullRequest(
-        code_host=code_host, llm_reviewer=llm, review_repo=repo,
+        code_host=code_host,
+        llm_reviewer=llm,
+        review_repo=repo,
     )
     await uc.execute(
-        owner="acme", repo="web", pr_number=7, head_sha="abc",
-        action="opened", delivery_id="d-1",
+        owner="acme",
+        repo="web",
+        pr_number=7,
+        head_sha="abc",
+        action="opened",
+        delivery_id="d-1",
     )
 
     assert len(repo.saved) == 1
@@ -175,18 +181,23 @@ async def test_degraded_mode_skips_llm_when_quota_exhausted() -> None:
     repo = FakeReviewRepo(today_count=50)
 
     uc = ReviewPullRequest(
-        code_host=code_host, llm_reviewer=llm, review_repo=repo,
+        code_host=code_host,
+        llm_reviewer=llm,
+        review_repo=repo,
         daily_quota=50,
     )
     await uc.execute(
-        owner="o", repo="r", pr_number=1, head_sha="abc", action="opened",
+        owner="o",
+        repo="r",
+        pr_number=1,
+        head_sha="abc",
+        action="opened",
     )
 
     assert not llm.called
     assert code_host.posted_review is not None
     rule_findings = [
-        f for f in code_host.posted_review.findings
-        if f.source == Source.RULE
+        f for f in code_host.posted_review.findings if f.source == Source.RULE
     ]
     assert len(rule_findings) >= 1
 
@@ -198,11 +209,17 @@ async def test_degraded_mode_not_triggered_when_under_quota() -> None:
     repo = FakeReviewRepo(today_count=10)
 
     uc = ReviewPullRequest(
-        code_host=code_host, llm_reviewer=llm, review_repo=repo,
+        code_host=code_host,
+        llm_reviewer=llm,
+        review_repo=repo,
         daily_quota=50,
     )
     await uc.execute(
-        owner="o", repo="r", pr_number=1, head_sha="abc", action="opened",
+        owner="o",
+        repo="r",
+        pr_number=1,
+        head_sha="abc",
+        action="opened",
     )
 
     assert llm.called
@@ -262,12 +279,22 @@ async def test_invalid_code_suggestion_stripped_but_finding_kept() -> None:
 
     files = [FileDiff("main.py", [AddedLine(1, "x = 1")])]
     bad = Finding(
-        axis=Axis.CRAFTS, file="main.py", line=99, issue="t", suggestion="fix",
-        source=Source.LLM, code_suggestion=CodeSuggestion("y = 2"),
+        axis=Axis.CRAFTS,
+        file="main.py",
+        line=99,
+        issue="t",
+        suggestion="fix",
+        source=Source.LLM,
+        code_suggestion=CodeSuggestion("y = 2"),
     )
     good = Finding(
-        axis=Axis.CRAFTS, file="main.py", line=1, issue="u", suggestion="fix",
-        source=Source.LLM, code_suggestion=CodeSuggestion("y = 2"),
+        axis=Axis.CRAFTS,
+        file="main.py",
+        line=1,
+        issue="u",
+        suggestion="fix",
+        source=Source.LLM,
+        code_suggestion=CodeSuggestion("y = 2"),
     )
     code_host = FakeCodeHost(files)
     uc = ReviewPullRequest(code_host=code_host, llm_reviewer=FakeLLM([bad, good]))
@@ -277,3 +304,42 @@ async def test_invalid_code_suggestion_stripped_but_finding_kept() -> None:
     by_line = {f.line: f for f in code_host.posted_review.findings}
     assert by_line[99].code_suggestion is None
     assert by_line[1].code_suggestion == CodeSuggestion("y = 2")
+
+
+async def test_resolved_thread_suppresses_finding_without_command() -> None:
+    from pairo.domain.fingerprint import fingerprint_for
+    from pairo.domain.marker import build_marker
+
+    finding = Finding(
+        axis=Axis.CRAFTS,
+        file="a.py",
+        line=1,
+        issue="Bad",
+        suggestion="Fix",
+        source=Source.LLM,
+    )
+    host = FakeCodeHost([FileDiff(path="a.py", added_lines=[AddedLine(1, "x")])])
+    marker = build_marker(fingerprint_for(finding), "crafts", "")
+
+    async def threads(*_: object) -> list[dict[str, object]]:
+        return [{"is_resolved": True, "comment_id": 5, "body": f"Bad {marker}"}]
+
+    async def reactions(*_: object) -> list[str]:
+        return []
+
+    host.get_review_threads = threads  # type: ignore[attr-defined]
+    host.get_comment_reactions = reactions  # type: ignore[attr-defined]
+
+    class Repo:
+        saved: list[object] = []
+
+        async def get_decisions(self, *_: object) -> list[object]:
+            return self.saved
+
+        async def save(self, d: object) -> None:
+            self.saved.append(d)
+
+    uc = ReviewPullRequest(host, FakeLLM([finding]), decision_repo=Repo())
+    await uc.execute(owner="o", repo="r", pr_number=1, head_sha="s", action="opened")
+    assert host.posted_review is not None
+    assert host.posted_review.findings == []

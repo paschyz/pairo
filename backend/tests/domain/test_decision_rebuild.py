@@ -1,8 +1,7 @@
 """Tests for rebuilding decisions from GitHub comment markers."""
 
-import pytest
 
-from pairo.domain.decision import DecisionStatus, FindingDecision
+from pairo.domain.decision import DecisionStatus
 from pairo.domain.decision_rebuild import rebuild_decisions_from_comments
 from pairo.domain.marker import build_marker
 
@@ -42,9 +41,7 @@ class TestRebuildDecisions:
 
     def test_resolved_thread_marks_rejected(self):
         marker = build_marker("fp_resolved", "eco", "size")
-        comments = [
-            _comment(f"Too big\n\n{marker}", comment_id=200, is_resolved=True)
-        ]
+        comments = [_comment(f"Too big\n\n{marker}", comment_id=200, is_resolved=True)]
         decisions = rebuild_decisions_from_comments(comments, "acme/web", 1)
         assert len(decisions) == 1
         assert decisions[0].status == DecisionStatus.REJECTED

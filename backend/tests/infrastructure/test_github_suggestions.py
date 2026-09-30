@@ -10,9 +10,7 @@ from pairo.infrastructure.github.client import GitHubClient, render_review_comme
 API = "https://api.github.com"
 
 
-def _finding(
-    suggestion: CodeSuggestion | None, line: int | None = 5
-) -> Finding:
+def _finding(suggestion: CodeSuggestion | None, line: int | None = 5) -> Finding:
     return Finding(
         axis=Axis.CRAFTS,
         file="a.py",
@@ -24,26 +22,27 @@ def _finding(
     )
 
 
+def _no_marker(c: dict) -> str:
+    return c["body"].rsplit("\n\n", 1)[0]
+
+
 def test_no_suggestion_plain_comment() -> None:
     c = render_review_comment(_finding(None))
     assert "suggestion\n" not in c["body"]
-    assert c == {
-        "path": "a.py",
-        "line": 5,
-        "side": "RIGHT",
-        "body": "🔧 **crafts** : Bad\n\nDo better",
-    }
+    assert _no_marker(c) == "🔧 **crafts** : Bad\n\nDo better"
+    assert (c["path"], c["line"], c["side"]) == ("a.py", 5, "RIGHT")
+    assert c["body"].endswith(" -->")
 
 
 def test_single_line_suggestion() -> None:
     c = render_review_comment(_finding(CodeSuggestion("x = 1")))
-    assert c["body"].endswith("\n\n```suggestion\nx = 1\n```")
+    assert _no_marker(c).endswith("\n\n```suggestion\nx = 1\n```")
     assert "start_line" not in c
 
 
 def test_multi_line_suggestion_range() -> None:
     c = render_review_comment(_finding(CodeSuggestion("a\n\nb\nc", end_line=7)))
-    assert c["body"].endswith("```suggestion\na\n\nb\nc\n```")
+    assert _no_marker(c).endswith("```suggestion\na\n\nb\nc\n```")
     assert (c["start_line"], c["start_side"]) == (5, "RIGHT")
     assert (c["line"], c["side"]) == (7, "RIGHT")
 
@@ -56,7 +55,7 @@ def test_empty_suggestion_plain_comment() -> None:
 def test_backticks_in_replacement_widen_fence() -> None:
     c = render_review_comment(_finding(CodeSuggestion("s = '''\n```\n'''")))
     assert "````suggestion\n" in c["body"]
-    assert c["body"].endswith("\n````")
+    assert _no_marker(c).endswith("\n````")
 
 
 def _review(*findings: Finding) -> Review:
@@ -90,3 +89,14 @@ async def test_422_without_suggestions_still_raises() -> None:
     except httpx.HTTPStatusError:
         return
     raise AssertionError("expected HTTPStatusError")
+
+
+def test_marker_matches_memory_fingerprint() -> None:
+    from pairo.domain.fingerprint import fingerprint_for
+    from pairo.domain.marker import parse_marker
+
+    f = _finding(CodeSuggestion("x = 1"))
+    marker = parse_marker(render_review_comment(f)["body"])
+    assert marker is not None
+    assert marker["fp"] == fingerprint_for(f)
+    assert marker["axis"] == "crafts"

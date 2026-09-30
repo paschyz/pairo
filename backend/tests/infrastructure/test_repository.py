@@ -101,7 +101,8 @@ async def test_today_review_count(repo: SqlReviewRepository) -> None:
 
 
 async def test_today_review_count_excludes_old(
-    repo: SqlReviewRepository, session: Session,
+    repo: SqlReviewRepository,
+    session: Session,
 ) -> None:
     await repo.save(_review(delivery_id="d-old"))
     from pairo.infrastructure.persistence.models import ReviewRow

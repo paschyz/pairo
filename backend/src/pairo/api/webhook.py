@@ -144,7 +144,10 @@ async def _handle_comment(payload: dict[str, Any]) -> None:
                 )
                 await decision_repo.save(decision)
                 await code_host.reply_to_comment(
-                    owner, repo, pr_number, comment["id"],
+                    owner,
+                    repo,
+                    pr_number,
+                    comment["id"],
                     "\U0001f44d Noted, I will not raise this comment again on this PR.",
                 )
             elif cmd.action == "valid":
@@ -165,7 +168,10 @@ async def _handle_comment(payload: dict[str, Any]) -> None:
                     )
                     await decision_repo.save(decision)
                     await code_host.reply_to_comment(
-                        owner, repo, pr_number, comment["id"],
+                        owner,
+                        repo,
+                        pr_number,
+                        comment["id"],
                         "\U0001f44d Comment re-enabled.",
                     )
         finally:
@@ -174,6 +180,48 @@ async def _handle_comment(payload: dict[str, Any]) -> None:
         logger.info("Command %s processed for %s#%s", cmd.action, repo_full, pr_number)
     except Exception:
         logger.exception("Comment command failed for %s#%s", repo_full, pr_number)
+
+
+async def _handle_thread(payload: dict[str, Any]) -> None:
+    """Resolve conversation = reject the finding; unresolve = undo that rejection."""
+    repo_full = payload["repository"]["full_name"]
+    pr_number = payload["pull_request"]["number"]
+    try:
+        first = payload["thread"]["comments"][0]
+        marker = parse_marker(first.get("body", ""))
+        if marker is None:
+            return  # not a Pairo comment
+
+        session = get_session()
+        try:
+            decision_repo = SqlDecisionRepository(session)
+            resolved = payload["action"] == "resolved"
+            if not resolved:
+                existing = await decision_repo.get_by_fingerprint(
+                    repo_full, pr_number, marker["fp"]
+                )
+                if not existing or existing.signal != DecisionSignal.RESOLVED_UNCHANGED:
+                    return
+            await decision_repo.save(
+                FindingDecision(
+                    repo=repo_full,
+                    pr_number=pr_number,
+                    fingerprint=marker["fp"],
+                    axis=marker["axis"],
+                    category=marker["cat"],
+                    status=DecisionStatus.REJECTED
+                    if resolved
+                    else DecisionStatus.POSTED,
+                    signal=DecisionSignal.RESOLVED_UNCHANGED if resolved else None,
+                    decided_by=payload.get("sender", {}).get("login"),
+                    github_comment_id=first["id"],
+                )
+            )
+        finally:
+            session.close()
+        logger.info("Thread %s for %s#%s", payload["action"], repo_full, pr_number)
+    except Exception:
+        logger.exception("Thread handling failed for %s#%s", repo_full, pr_number)
 
 
 @router.post("/webhook", status_code=202, response_model=None)
@@ -205,6 +253,13 @@ async def webhook(
             return _ignored("No command in comment")
         background_tasks.add_task(_handle_comment, payload)
         return {"detail": "Command queued"}
+
+    if event == "pull_request_review_thread":
+        action = payload.get("action", "")
+        if action not in ("resolved", "unresolved"):
+            return _ignored(f"Ignored thread action: {action}")
+        background_tasks.add_task(_handle_thread, payload)
+        return {"detail": "Thread queued"}
 
     if event != "pull_request":
         return _ignored(f"Ignored event: {event}")

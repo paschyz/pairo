@@ -17,10 +17,7 @@ class ReplyClassification:
     confidence: float
 
     def is_rejection(self) -> bool:
-        return (
-            self.verdict == "rejects"
-            and self.confidence >= _HIGH_CONFIDENCE
-        )
+        return self.verdict == "rejects" and self.confidence >= _HIGH_CONFIDENCE
 
 
 def parse_classifications(raw: str) -> list[ReplyClassification]:

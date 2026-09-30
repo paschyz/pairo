@@ -151,7 +151,11 @@ def test_parse_findings_code_suggestion() -> None:
     from pairo.domain.finding import CodeSuggestion
 
     base = {
-        "axis": "crafts", "file": "a.py", "line": 1, "issue": "x", "suggestion": "y",
+        "axis": "crafts",
+        "file": "a.py",
+        "line": 1,
+        "issue": "x",
+        "suggestion": "y",
     }
     raw = [
         {**base, "code_suggestion": {"replacement": "z = 1", "end_line": 2}},
@@ -162,7 +166,13 @@ def test_parse_findings_code_suggestion() -> None:
     assert got == [CodeSuggestion("z = 1", end_line=2), None, None]
 
 
-_ITEM = {"axis": "eco", "file": "u.py", "line": 10, "issue": "n+1", "suggestion": "join"}
+_ITEM = {
+    "axis": "eco",
+    "file": "u.py",
+    "line": 10,
+    "issue": "n+1",
+    "suggestion": "join",
+}
 
 
 def test_parse_findings_markdown_fenced_json() -> None:

@@ -57,9 +57,7 @@ def _parse_findings(text: str) -> list[Finding]:
                     issue=item["issue"],
                     suggestion=item["suggestion"],
                     source=Source.LLM,
-                    code_suggestion=parse_code_suggestion(
-                        item.get("code_suggestion")
-                    ),
+                    code_suggestion=parse_code_suggestion(item.get("code_suggestion")),
                 )
             )
         except (KeyError, ValueError):
@@ -99,9 +97,7 @@ class LiteLLMReviewer:
             )
             usage = response.usage
             self.last_input_tokens = usage.prompt_tokens or 0 if usage else 0
-            self.last_output_tokens = (
-                usage.completion_tokens or 0 if usage else 0
-            )
+            self.last_output_tokens = usage.completion_tokens or 0 if usage else 0
             text = response.choices[0].message.content or ""
             return _parse_findings(text)
         except Exception:

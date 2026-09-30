@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from pairo.domain.diff import AddedLine
-from pairo.domain.finding import Axis, Finding, Source
 from pairo.domain.ports import FileDiff
 from pairo.infrastructure.llm.cached_reviewer import CachedLLMReviewer
 from pairo.infrastructure.llm.fake import FakeLLMReviewer

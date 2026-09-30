@@ -1,9 +1,11 @@
 import logging
 from typing import Any, Protocol
 
+from pairo.domain.decision import DecisionStatus
+from pairo.domain.decision_rebuild import rebuild_decisions_from_comments
 from pairo.domain.filter_findings import filter_findings, memory_summary_line
 from pairo.domain.finding import Finding
-from pairo.domain.fingerprint import compute_fingerprint
+from pairo.domain.fingerprint import fingerprint_for
 from pairo.domain.ports import FileDiff
 from pairo.domain.repo_config import parse_repo_config
 from pairo.domain.review import Review
@@ -35,6 +37,14 @@ class CodeHost(Protocol):
         self, owner: str, repo: str, path: str, ref: str
     ) -> str | None: ...
 
+    async def get_review_threads(
+        self, owner: str, repo: str, pr_number: int
+    ) -> list[dict[str, Any]]: ...
+
+    async def get_comment_reactions(
+        self, owner: str, repo: str, comment_id: int
+    ) -> list[str]: ...
+
 
 class LLMReviewer(Protocol):
     last_input_tokens: int
@@ -64,6 +74,33 @@ class ReviewPullRequest:
         self._daily_quota = daily_quota
         self._decision_repo = decision_repo
 
+    async def _sync_github_decisions(
+        self, owner: str, repo: str, pr_number: int
+    ) -> None:
+        """Persist Resolve / thumbs-down rejections found on the PR's threads."""
+        try:
+            threads = await self._code_host.get_review_threads(owner, repo, pr_number)
+            comments = [
+                {
+                    "id": t["comment_id"],
+                    "body": t["body"],
+                    "is_resolved": t["is_resolved"],
+                    "reactions": await self._code_host.get_comment_reactions(
+                        owner, repo, t["comment_id"]
+                    ),
+                }
+                for t in threads
+            ]
+            for d in rebuild_decisions_from_comments(
+                comments, f"{owner}/{repo}", pr_number
+            ):
+                if d.status == DecisionStatus.REJECTED:
+                    await self._decision_repo.save(d)
+        except Exception:
+            logger.exception(
+                "Decision sync failed for %s/%s#%s", owner, repo, pr_number
+            )
+
     async def execute(
         self,
         *,
@@ -85,9 +122,7 @@ class ReviewPullRequest:
                 owner, repo, before_sha, head_sha
             )
         else:
-            files = await self._code_host.get_pull_request_files(
-                owner, repo, pr_number
-            )
+            files = await self._code_host.get_pull_request_files(owner, repo, pr_number)
 
         files = [f for f in files if not config.should_ignore(f.path)]
 
@@ -119,7 +154,9 @@ class ReviewPullRequest:
         if proposed:
             logger.info(
                 "code suggestions: proposed=%d kept=%d dropped_invalid=%d",
-                proposed, proposed - dropped, dropped,
+                proposed,
+                proposed - dropped,
+                dropped,
             )
 
         # --- Memory filtering ---
@@ -127,31 +164,16 @@ class ReviewPullRequest:
         memory_line = ""
         if self._decision_repo:
             repo_full = f"{owner}/{repo}"
-            decisions = await self._decision_repo.get_decisions(
-                repo_full, pr_number
-            )
+            await self._sync_github_decisions(owner, repo, pr_number)
+            decisions = await self._decision_repo.get_decisions(repo_full, pr_number)
             if decisions:
                 # Build fingerprint -> finding mapping
                 findings_by_fp: dict[str, Finding] = {}
                 for finding in findings:
-                    # ponytail: simple fp with issue as context,
-                    # proper context lines when diff tracking lands
-                    fp = compute_fingerprint(
-                        axis=finding.axis.value,
-                        category="",
-                        file_path=finding.file,
-                        context_lines=[finding.issue],
-                        rule_id=(
-                            f"{finding.axis.value}.{finding.source.value}"
-                            if finding.source.value == "rule"
-                            else None
-                        ),
-                    )
+                    fp = fingerprint_for(finding)
                     findings_by_fp[fp] = finding
 
-                kept, filtered_count = filter_findings(
-                    findings_by_fp, decisions
-                )
+                kept, filtered_count = filter_findings(findings_by_fp, decisions)
                 findings = list(kept.values())
                 memory_line = memory_summary_line(filtered_count)
 

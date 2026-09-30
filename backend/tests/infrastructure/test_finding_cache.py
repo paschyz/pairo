@@ -1,6 +1,5 @@
 """Tests for SQL FindingCache implementation."""
 
-import json
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -63,7 +62,9 @@ async def test_expired_entry_returns_none(
 
 async def test_overwrite_existing_key(cache: SqlFindingCache) -> None:
     await cache.put("key1", SAMPLE_FINDINGS, input_tokens=10, output_tokens=5)
-    new_findings = [{"axis": "eco", "file": "b.py", "line": 2, "issue": "n+1", "suggestion": "join"}]
+    new_findings = [
+        {"axis": "eco", "file": "b.py", "line": 2, "issue": "n+1", "suggestion": "join"}
+    ]
     await cache.put("key1", new_findings, input_tokens=200, output_tokens=100)
 
     result = await cache.get("key1")

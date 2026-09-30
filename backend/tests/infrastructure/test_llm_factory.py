@@ -59,5 +59,7 @@ def test_openrouter_provider_default_and_no_double_prefix() -> None:
     assert create_reviewer(provider="openrouter")._model == (
         "openrouter/anthropic/claude-haiku-4.5"
     )
-    r = create_reviewer(provider="openrouter", model="openrouter/anthropic/claude-haiku-4.5")
+    r = create_reviewer(
+        provider="openrouter", model="openrouter/anthropic/claude-haiku-4.5"
+    )
     assert r._model == "openrouter/anthropic/claude-haiku-4.5"

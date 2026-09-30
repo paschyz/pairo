@@ -33,9 +33,7 @@ class TestIgnoreCategories:
         assert config.should_ignore_category("crafts", "naming") is False
 
     def test_multiple_patterns(self):
-        config = RepoConfig(
-            ignore_categories=["crafts.naming", "eco.*"]
-        )
+        config = RepoConfig(ignore_categories=["crafts.naming", "eco.*"])
         assert config.should_ignore_category("crafts", "naming") is True
         assert config.should_ignore_category("eco", "n-plus-one") is True
         assert config.should_ignore_category("a11y", "img-alt") is False

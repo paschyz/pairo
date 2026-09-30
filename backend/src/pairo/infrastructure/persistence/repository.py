@@ -87,24 +87,22 @@ class SqlReviewRepository:
     async def stats(self) -> dict[str, int]:
         def _stats() -> dict[str, int]:
             review_count = (
-                self._session.execute(
-                    select(func.count(ReviewRow.id))
-                ).scalar() or 0
+                self._session.execute(select(func.count(ReviewRow.id))).scalar() or 0
             )
             finding_count = (
-                self._session.execute(
-                    select(func.count(FindingRow.id))
-                ).scalar() or 0
+                self._session.execute(select(func.count(FindingRow.id))).scalar() or 0
             )
             input_tok = (
                 self._session.execute(
                     select(func.coalesce(func.sum(ReviewRow.input_tokens), 0))
-                ).scalar() or 0
+                ).scalar()
+                or 0
             )
             output_tok = (
                 self._session.execute(
                     select(func.coalesce(func.sum(ReviewRow.output_tokens), 0))
-                ).scalar() or 0
+                ).scalar()
+                or 0
             )
             return {
                 "total_reviews": int(review_count),

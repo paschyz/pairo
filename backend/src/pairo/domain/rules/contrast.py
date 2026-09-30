@@ -76,8 +76,7 @@ def check_contrast(path: str, added_lines: list[AddedLine]) -> list[Finding]:
                         f" ({ratio:.1f}:1 < {_WCAG_AA_THRESHOLD}:1)"
                     ),
                     suggestion=(
-                        "Adjust the colors to reach"
-                        " a ratio of at least 4.5:1 (AA)"
+                        "Adjust the colors to reach a ratio of at least 4.5:1 (AA)"
                     ),
                     source=Source.RULE,
                 )

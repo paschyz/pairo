@@ -4,9 +4,7 @@ from pairo.domain.decision import DecisionStatus, FindingDecision
 from pairo.domain.filter_findings import filter_findings
 
 
-def _decision(
-    fingerprint: str, status: DecisionStatus
-) -> FindingDecision:
+def _decision(fingerprint: str, status: DecisionStatus) -> FindingDecision:
     return FindingDecision(
         repo="acme/web",
         pr_number=1,

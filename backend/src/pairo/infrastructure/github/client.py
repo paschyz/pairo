@@ -8,6 +8,8 @@ import httpx
 
 from pairo.domain.diff import parse_patch
 from pairo.domain.finding import Finding
+from pairo.domain.fingerprint import fingerprint_for
+from pairo.domain.marker import build_marker
 from pairo.domain.ports import FileDiff
 from pairo.domain.review import Review
 
@@ -65,6 +67,7 @@ def render_review_comment(finding: Finding) -> dict[str, Any]:
             comment.update(
                 start_line=finding.line, start_side="RIGHT", line=cs.end_line
             )
+    body += "\n\n" + build_marker(fingerprint_for(finding), finding.axis.value, "")
     comment["body"] = body
     return comment
 
@@ -181,7 +184,8 @@ class GitHubClient:
                 logger.warning(
                     "GitHub rejected review with %d code suggestion(s), "
                     "retrying as plain comments: %s",
-                    n_sugg, resp.text[:300],
+                    n_sugg,
+                    resp.text[:300],
                 )
                 payload["comments"] = [
                     render_review_comment(replace(f, code_suggestion=None))
@@ -262,8 +266,10 @@ class GitHubClient:
                     json={
                         "query": query,
                         "variables": {
-                            "owner": owner, "repo": repo,
-                            "pr": pr_number, "cursor": cursor,
+                            "owner": owner,
+                            "repo": repo,
+                            "pr": pr_number,
+                            "cursor": cursor,
                         },
                     },
                 )
@@ -276,11 +282,13 @@ class GitHubClient:
                         else None
                     )
                     if first:
-                        threads.append({
-                            "is_resolved": node["isResolved"],
-                            "comment_id": first["databaseId"],
-                            "body": first["body"],
-                        })
+                        threads.append(
+                            {
+                                "is_resolved": node["isResolved"],
+                                "comment_id": first["databaseId"],
+                                "body": first["body"],
+                            }
+                        )
                 if not data["pageInfo"]["hasNextPage"]:
                     break
                 cursor = data["pageInfo"]["endCursor"]

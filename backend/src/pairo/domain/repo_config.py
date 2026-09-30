@@ -28,8 +28,7 @@ class RepoConfig:
     def should_ignore_category(self, axis: str, category: str) -> bool:
         qualified = f"{axis}.{category}"
         return any(
-            fnmatch.fnmatch(qualified, pattern)
-            for pattern in self.ignore_categories
+            fnmatch.fnmatch(qualified, pattern) for pattern in self.ignore_categories
         )
 
 

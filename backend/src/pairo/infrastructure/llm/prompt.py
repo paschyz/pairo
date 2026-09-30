@@ -7,12 +7,9 @@ PROMPT_VERSION = "4"
 _AXIS_DESCRIPTIONS: dict[str, str] = {
     "crafts": "naming, long functions, duplication, dead code, readability",
     "eco": (
-        "N+1 queries, missing pagination, heavy dependencies, "
-        "unnecessary computation"
+        "N+1 queries, missing pagination, heavy dependencies, unnecessary computation"
     ),
-    "a11y": (
-        "missing alt, low contrast, non-semantic elements, keyboard navigation"
-    ),
+    "a11y": ("missing alt, low contrast, non-semantic elements, keyboard navigation"),
 }
 
 _SYSTEM = "You are an expert code reviewer. Analyze added lines (+) and report issues."
@@ -53,8 +50,7 @@ def build_prompt(
         parts.append("\nAlready detected findings (do not duplicate):")
         for finding in existing_findings:
             parts.append(
-                f"- [{finding.axis}] {finding.file}:{finding.line}: "
-                f"{finding.issue}"
+                f"- [{finding.axis}] {finding.file}:{finding.line}: {finding.issue}"
             )
 
     parts.append(_OUTPUT)

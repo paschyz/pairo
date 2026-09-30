@@ -19,9 +19,7 @@ class SqlDecisionRepository:
     def __init__(self, session: Session) -> None:
         self._session = session
 
-    async def get_decisions(
-        self, repo: str, pr_number: int
-    ) -> list[FindingDecision]:
+    async def get_decisions(self, repo: str, pr_number: int) -> list[FindingDecision]:
         def _query() -> list[FindingDecision]:
             stmt = select(FindingDecisionRow).where(
                 FindingDecisionRow.repo == repo,
@@ -80,9 +78,7 @@ class SqlDecisionRepository:
 
         return await asyncio.to_thread(_query)
 
-    async def count_rejected_prs_by_category(
-        self, repo: str, category: str
-    ) -> int:
+    async def count_rejected_prs_by_category(self, repo: str, category: str) -> int:
         def _count() -> int:
             stmt = (
                 select(FindingDecisionRow.pr_number)

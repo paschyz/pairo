@@ -55,9 +55,7 @@ class CachedLLMReviewer:
         # Build cache key from file contents
         files_content = {}
         for f in files:
-            lines = "\n".join(
-                f"{ln.number}: {ln.content}" for ln in f.added_lines
-            )
+            lines = "\n".join(f"{ln.number}: {ln.content}" for ln in f.added_lines)
             files_content[f.path] = lines
 
         key = compute_cache_key(
@@ -72,9 +70,7 @@ class CachedLLMReviewer:
         cached = await self._cache.get(key)
         if cached is not None:
             self.cache_hits += 1
-            self.tokens_saved += (
-                cached["input_tokens"] + cached["output_tokens"]
-            )
+            self.tokens_saved += cached["input_tokens"] + cached["output_tokens"]
             self.last_input_tokens = 0
             self.last_output_tokens = 0
             return _parse_cached(cached["findings"])
@@ -122,9 +118,7 @@ def _parse_cached(raw: list[dict[str, Any]]) -> list[Finding]:
                     issue=item["issue"],
                     suggestion=item["suggestion"],
                     source=Source.LLM,
-                    code_suggestion=parse_code_suggestion(
-                        item.get("code_suggestion")
-                    ),
+                    code_suggestion=parse_code_suggestion(item.get("code_suggestion")),
                 )
             )
         except (KeyError, ValueError):

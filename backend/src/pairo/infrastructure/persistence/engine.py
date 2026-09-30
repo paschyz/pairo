@@ -10,9 +10,7 @@ _SessionLocal: sessionmaker[Session] | None = None
 def _init() -> None:
     global _engine, _SessionLocal  # noqa: PLW0603
     url = settings.database_url
-    connect_args = (
-        {"check_same_thread": False} if url.startswith("sqlite") else {}
-    )
+    connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
     _engine = create_engine(url, connect_args=connect_args)
     _SessionLocal = sessionmaker(bind=_engine)
 

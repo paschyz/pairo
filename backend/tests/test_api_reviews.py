@@ -61,7 +61,8 @@ async def test_list_reviews_empty(client: AsyncClient) -> None:
 
 
 async def test_list_reviews(
-    client: AsyncClient, _db: SqlReviewRepository,
+    client: AsyncClient,
+    _db: SqlReviewRepository,
 ) -> None:
     await _db.save(_review("d-1"))
     await _db.save(_review("d-2"))
@@ -75,7 +76,8 @@ async def test_list_reviews(
 
 
 async def test_list_reviews_pagination(
-    client: AsyncClient, _db: SqlReviewRepository,
+    client: AsyncClient,
+    _db: SqlReviewRepository,
 ) -> None:
     for i in range(5):
         await _db.save(_review(f"d-{i}"))
@@ -86,7 +88,8 @@ async def test_list_reviews_pagination(
 
 
 async def test_get_review(
-    client: AsyncClient, _db: SqlReviewRepository,
+    client: AsyncClient,
+    _db: SqlReviewRepository,
 ) -> None:
     r = _review()
     await _db.save(r)
@@ -113,7 +116,8 @@ async def test_stats_empty(client: AsyncClient) -> None:
 
 
 async def test_stats(
-    client: AsyncClient, _db: SqlReviewRepository,
+    client: AsyncClient,
+    _db: SqlReviewRepository,
 ) -> None:
     await _db.save(_review("d-1", n_findings=2))
     await _db.save(_review("d-2", n_findings=3))

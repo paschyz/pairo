@@ -18,16 +18,12 @@ class SqlFindingCache:
 
     async def get(self, key: str) -> dict[str, Any] | None:
         def _query() -> dict[str, Any] | None:
-            stmt = select(LlmCacheRow).where(
-                LlmCacheRow.cache_key == key
-            )
+            stmt = select(LlmCacheRow).where(LlmCacheRow.cache_key == key)
             row = self._session.scalars(stmt).first()
             if row is None:
                 return None
             # TTL check
-            if datetime.now(tz=UTC) - row.created_at.replace(
-                tzinfo=UTC
-            ) > self._ttl:
+            if datetime.now(tz=UTC) - row.created_at.replace(tzinfo=UTC) > self._ttl:
                 self._session.delete(row)
                 self._session.commit()
                 return None
@@ -48,9 +44,7 @@ class SqlFindingCache:
         output_tokens: int = 0,
     ) -> None:
         def _save() -> None:
-            stmt = select(LlmCacheRow).where(
-                LlmCacheRow.cache_key == key
-            )
+            stmt = select(LlmCacheRow).where(LlmCacheRow.cache_key == key)
             existing = self._session.scalars(stmt).first()
             if existing:
                 existing.findings_json = json.dumps(findings)

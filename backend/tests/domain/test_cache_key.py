@@ -71,10 +71,6 @@ class TestCacheKey:
             prompt_version="1",
             model="m",
         )
-        k1 = compute_cache_key(
-            files_content={"a.py": "+ x", "b.py": "+ y"}, **base
-        )
-        k2 = compute_cache_key(
-            files_content={"b.py": "+ y", "a.py": "+ x"}, **base
-        )
+        k1 = compute_cache_key(files_content={"a.py": "+ x", "b.py": "+ y"}, **base)
+        k2 = compute_cache_key(files_content={"b.py": "+ y", "a.py": "+ x"}, **base)
         assert k1 == k2

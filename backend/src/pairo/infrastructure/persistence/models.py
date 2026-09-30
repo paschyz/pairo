@@ -22,7 +22,10 @@ class ReviewRow(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     delivery_id: Mapped[str] = mapped_column(
-        String, unique=True, nullable=False, index=True,
+        String,
+        unique=True,
+        nullable=False,
+        index=True,
     )
     owner: Mapped[str] = mapped_column(String, nullable=False)
     repo: Mapped[str] = mapped_column(String, nullable=False)
@@ -33,11 +36,14 @@ class ReviewRow(Base):
     output_tokens: Mapped[int] = mapped_column(Integer, default=0)
     co2_g: Mapped[float | None] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, server_default=func.now(), nullable=False,
+        DateTime,
+        server_default=func.now(),
+        nullable=False,
     )
 
     findings: Mapped[list["FindingRow"]] = relationship(
-        back_populates="review", cascade="all, delete-orphan",
+        back_populates="review",
+        cascade="all, delete-orphan",
     )
 
 
@@ -46,7 +52,8 @@ class FindingRow(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     review_id: Mapped[int] = mapped_column(
-        ForeignKey("reviews.id", ondelete="CASCADE"), nullable=False,
+        ForeignKey("reviews.id", ondelete="CASCADE"),
+        nullable=False,
     )
     axis: Mapped[str] = mapped_column(String, nullable=False)
     file: Mapped[str] = mapped_column(String, nullable=False)
@@ -76,10 +83,15 @@ class FindingDecisionRow(Base):
     decided_by: Mapped[str | None] = mapped_column(String, nullable=True)
     github_comment_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, server_default=func.now(), nullable=False,
+        DateTime,
+        server_default=func.now(),
+        nullable=False,
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, server_default=func.now(), onupdate=func.now(), nullable=False,
+        DateTime,
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
     )
 
 
@@ -87,14 +99,21 @@ class LlmCacheRow(Base):
     __tablename__ = "llm_cache"
 
     id: Mapped[int] = mapped_column(
-        Integer, primary_key=True, autoincrement=True,
+        Integer,
+        primary_key=True,
+        autoincrement=True,
     )
     cache_key: Mapped[str] = mapped_column(
-        String(64), unique=True, nullable=False, index=True,
+        String(64),
+        unique=True,
+        nullable=False,
+        index=True,
     )
     findings_json: Mapped[str] = mapped_column(Text, nullable=False)
     input_tokens: Mapped[int] = mapped_column(Integer, default=0)
     output_tokens: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, server_default=func.now(), nullable=False,
+        DateTime,
+        server_default=func.now(),
+        nullable=False,
     )

@@ -1,4 +1,3 @@
-import pytest
 
 from pairo.domain.marker import build_marker, parse_marker
 
