@@ -1,3 +1,8 @@
+import asyncio
+
+import pytest
+
+from pairo.infrastructure.llm import rate_limiter
 from pairo.infrastructure.llm.rate_limiter import RateLimiter
 
 
@@ -34,3 +39,25 @@ def test_record_adds_timestamp() -> None:
     limiter.record(1.0)
     limiter.record(2.0)
     assert len(limiter._calls) == 2
+
+
+async def test_concurrent_waiters_do_not_burst(monkeypatch: pytest.MonkeyPatch) -> None:
+    clock = [1000.0]
+    real_sleep = asyncio.sleep
+
+    async def fake_sleep(seconds: float) -> None:
+        clock[0] += seconds
+        await real_sleep(0)
+
+    monkeypatch.setattr(rate_limiter.time, "monotonic", lambda: clock[0])
+    monkeypatch.setattr(rate_limiter.asyncio, "sleep", fake_sleep)
+
+    limiter = RateLimiter(rpm=1)
+
+    async def call() -> float:
+        await limiter.acquire()
+        return clock[0]
+
+    times = await asyncio.gather(*(call() for _ in range(3)))
+
+    assert times == [1000.0, 1060.0, 1120.0]  # one call per minute, no burst

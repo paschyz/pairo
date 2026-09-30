@@ -6,6 +6,7 @@ class RateLimiter:
     def __init__(self, rpm: int) -> None:
         self._rpm = rpm
         self._calls: list[float] = []
+        self._lock = asyncio.Lock()
 
     def wait_seconds(self, now: float | None = None) -> float:
         now = now or time.monotonic()
@@ -18,7 +19,9 @@ class RateLimiter:
         self._calls.append(now or time.monotonic())
 
     async def acquire(self) -> None:
-        wait = self.wait_seconds()
-        if wait > 0:
-            await asyncio.sleep(wait)
-        self.record()
+        # Serialize waiters and re-check after sleeping, otherwise concurrent
+        # callers wake together and all take the single freed slot.
+        async with self._lock:
+            while (wait := self.wait_seconds()) > 0:
+                await asyncio.sleep(wait)
+            self.record()
