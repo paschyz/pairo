@@ -1,12 +1,21 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useReviewStore } from '@/stores/reviews'
 
 const store = useReviewStore()
 
-onMounted(async () => {
-  await Promise.all([store.fetchStats(), store.fetchMemoryStats(), store.fetchReviews(0, 5)])
-})
+const refreshing = ref(false)
+
+async function refresh() {
+  refreshing.value = true
+  try {
+    await Promise.all([store.fetchStats(), store.fetchMemoryStats(), store.fetchReviews(0, 5)])
+  } finally {
+    refreshing.value = false
+  }
+}
+
+onMounted(refresh)
 
 const signalLabels: Record<string, string> = {
   command: '@pairo ignore',
@@ -29,8 +38,13 @@ function timeAgo(dateStr: string | null): string {
 <template>
   <div class="dashboard">
     <header class="page-header">
-      <h1>Dashboard</h1>
-      <p class="subtitle">PR review activity overview</p>
+      <div>
+        <h1>Dashboard</h1>
+        <p class="subtitle">PR review activity overview</p>
+      </div>
+      <button class="refresh-btn" :disabled="refreshing" @click="refresh">
+        {{ refreshing ? 'Refreshing…' : 'Refresh' }}
+      </button>
     </header>
 
     <div class="stats-grid">
@@ -109,7 +123,33 @@ function timeAgo(dateStr: string | null): string {
 }
 
 .page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
   margin-bottom: 2rem;
+}
+
+.refresh-btn {
+  background: #161821;
+  color: #e1e4e8;
+  border: 1px solid #2a2d3a;
+  border-radius: 6px;
+  padding: 0.5rem 0.9rem;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  border-color: #7c6ef0;
+  color: #7c6ef0;
+}
+
+.refresh-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 h1 {
