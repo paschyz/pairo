@@ -22,6 +22,15 @@ def create_reviewer(
             rate_limiter=RateLimiter(rpm=rpm_limit),
             api_key=api_key,
         )
+    if provider == "openrouter":
+        model_name = model or "google/gemini-2.5-flash"
+        if not model_name.startswith("openrouter/"):
+            model_name = f"openrouter/{model_name}"
+        return LiteLLMReviewer(
+            model=model_name,
+            rate_limiter=RateLimiter(rpm=rpm_limit),
+            api_key=api_key,
+        )
     if provider == "litellm":
         return LiteLLMReviewer(
             model=model or "gemini/gemini-2.0-flash",

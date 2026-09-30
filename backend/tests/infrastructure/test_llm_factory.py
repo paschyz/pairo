@@ -45,3 +45,19 @@ def test_gemini_provider_no_double_prefix() -> None:
 def test_unknown_provider_raises() -> None:
     with pytest.raises(ValueError, match="unknown"):
         create_reviewer(provider="openai")
+
+
+def test_openrouter_provider_prefixes_model() -> None:
+    reviewer = create_reviewer(
+        provider="openrouter", api_key="sk-or-x", model="google/gemini-2.5-flash"
+    )
+    assert isinstance(reviewer, LiteLLMReviewer)
+    assert reviewer._model == "openrouter/google/gemini-2.5-flash"
+
+
+def test_openrouter_provider_default_and_no_double_prefix() -> None:
+    assert create_reviewer(provider="openrouter")._model == (
+        "openrouter/google/gemini-2.5-flash"
+    )
+    r = create_reviewer(provider="openrouter", model="openrouter/deepseek/deepseek-chat")
+    assert r._model == "openrouter/deepseek/deepseek-chat"
