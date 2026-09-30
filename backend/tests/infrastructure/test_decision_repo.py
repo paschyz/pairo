@@ -102,3 +102,16 @@ async def test_save_with_all_fields(repo: SqlDecisionRepository) -> None:
     assert loaded.signal == DecisionSignal.REACTION
     assert loaded.decided_by == "bob"
     assert loaded.github_comment_id == 12345
+
+
+def test_github_comment_id_column_is_64_bit() -> None:
+    """Regression: real comment ids (> 2^31) overflowed Postgres INTEGER in prod.
+
+    SQLite does not enforce integer width, so assert on the column type.
+    """
+    from sqlalchemy import BigInteger
+
+    from pairo.infrastructure.persistence.models import FindingDecisionRow
+
+    col = FindingDecisionRow.__table__.c.github_comment_id
+    assert isinstance(col.type, BigInteger)
