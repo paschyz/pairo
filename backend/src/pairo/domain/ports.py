@@ -43,6 +43,20 @@ class CodeHost(Protocol):
         self, owner: str, repo: str, path: str, ref: str
     ) -> str | None: ...
 
+    async def propose_file_change(
+        self,
+        owner: str,
+        repo: str,
+        *,
+        default_branch: str,
+        branch: str,
+        path: str,
+        content: str,
+        message: str,
+        title: str,
+        body: str,
+    ) -> str: ...
+
     async def get_comment(
         self, owner: str, repo: str, comment_id: int
     ) -> dict[str, object]: ...

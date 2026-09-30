@@ -149,6 +149,78 @@ class GitHubClient:
         data: dict[str, Any] = resp.json()
         return base64.b64decode(data["content"]).decode()
 
+    async def propose_file_change(
+        self,
+        owner: str,
+        repo: str,
+        *,
+        default_branch: str,
+        branch: str,
+        path: str,
+        content: str,
+        message: str,
+        title: str,
+        body: str,
+    ) -> str:
+        # ponytail: after a merge the branch may be stale; if the PR then conflicts,
+        # delete-branch-on-merge (or recreate from default when no PR is open).
+        base = f"{GITHUB_API}/repos/{owner}/{repo}"
+        h = self._headers
+        async with httpx.AsyncClient() as client:
+            ref = await client.get(f"{base}/git/ref/heads/{branch}", headers=h)
+            if ref.status_code == 404:
+                src = await client.get(
+                    f"{base}/git/ref/heads/{default_branch}", headers=h
+                )
+                src.raise_for_status()
+                created = await client.post(
+                    f"{base}/git/refs",
+                    headers=h,
+                    json={
+                        "ref": f"refs/heads/{branch}",
+                        "sha": src.json()["object"]["sha"],
+                    },
+                )
+                created.raise_for_status()
+            else:
+                ref.raise_for_status()
+
+            current = await client.get(
+                f"{base}/contents/{path}", params={"ref": branch}, headers=h
+            )
+            payload: dict[str, Any] = {
+                "message": message,
+                "branch": branch,
+                "content": base64.b64encode(content.encode()).decode(),
+            }
+            if current.status_code == 200:
+                payload["sha"] = current.json()["sha"]
+            elif current.status_code != 404:
+                current.raise_for_status()
+            put = await client.put(f"{base}/contents/{path}", headers=h, json=payload)
+            put.raise_for_status()
+
+            prs = await client.get(
+                f"{base}/pulls",
+                params={"head": f"{owner}:{branch}", "state": "open"},
+                headers=h,
+            )
+            prs.raise_for_status()
+            if prs.json():
+                return str(prs.json()[0]["html_url"])
+            pr = await client.post(
+                f"{base}/pulls",
+                headers=h,
+                json={
+                    "title": title,
+                    "head": branch,
+                    "base": default_branch,
+                    "body": body,
+                },
+            )
+            pr.raise_for_status()
+            return str(pr.json()["html_url"])
+
     async def post_review(
         self, owner: str, repo: str, pr_number: int, review: Review
     ) -> None:
