@@ -1,4 +1,3 @@
-
 from pairo.domain.fingerprint import compute_fingerprint
 
 
