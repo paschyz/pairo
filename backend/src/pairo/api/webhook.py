@@ -132,6 +132,7 @@ async def _handle_comment(payload: dict[str, Any]) -> None:
         parent = await code_host.get_comment(owner, repo, parent_id)
         marker = parse_marker(parent.get("body", ""))
         if marker is None:
+            logger.info("Comment %s has no Pairo marker, ignoring", parent_id)
             return  # Not a Pairo comment
 
         session = get_session()
@@ -199,6 +200,9 @@ async def _handle_thread(payload: dict[str, Any]) -> None:
         first = payload["thread"]["comments"][0]
         marker = parse_marker(first.get("body", ""))
         if marker is None:
+            logger.info(
+                "Thread on %s#%s has no Pairo marker, ignoring", repo_full, pr_number
+            )
             return  # not a Pairo comment
 
         session = get_session()
@@ -251,6 +255,7 @@ async def webhook(
 
     event = request.headers.get("X-GitHub-Event", "")
     payload = json.loads(body)
+    logger.info("Webhook event=%s action=%s", event, payload.get("action"))
 
     if event == "pull_request_review_comment":
         action = payload.get("action", "")
