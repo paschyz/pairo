@@ -20,6 +20,7 @@ class RepoConfig:
     language: str = "en"
     memory_enabled: bool = True
     memory_classify_replies: bool = False
+    context_propose_rules: bool = True
     parse_error: str | None = None
 
     def should_ignore(self, path: str) -> bool:
@@ -44,6 +45,9 @@ def parse_repo_config(raw: str | None) -> RepoConfig:
     memory = data.get("memory", {})
     if not isinstance(memory, dict):
         memory = {}
+    context = data.get("context", {})
+    if not isinstance(context, dict):
+        context = {}
     return RepoConfig(
         axes=data.get("axes", _DEFAULT_AXES),
         max_image_kb=data.get("max_image_kb", _DEFAULT_MAX_IMAGE_KB),
@@ -52,4 +56,5 @@ def parse_repo_config(raw: str | None) -> RepoConfig:
         language=data.get("language", _DEFAULT_LANGUAGE),
         memory_enabled=memory.get("enabled", True),
         memory_classify_replies=memory.get("classify_replies", False),
+        context_propose_rules=context.get("propose_rules", True),
     )

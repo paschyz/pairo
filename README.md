@@ -130,7 +130,25 @@ memory:
 ignore_categories:            # Suppress finding categories
   - crafts.naming
   - eco.*                     # Wildcards supported
+
+context:
+  propose_rules: true         # Open PRs adding rules to .pairo.md (default: true)
 ```
+
+### `.pairo.md` (project context)
+
+When a repo owner, member or collaborator replies `@pairo ignore <reason>` to a Pairo
+comment and the reason states a lasting project rule (for example "we don't use
+jQuery here"), Pairo opens a pull request on the branch `pairo/context` adding the
+rule to `.pairo.md`. Nothing is pushed to your default branch: review and merge the PR.
+Further rules are added to the same PR while it is open.
+
+- Requires the GitHub App permissions **Contents: write** and **Pull requests: write**
+  (existing installations must accept the new permissions). Without them the review
+  still works and the comment is still ignored; only the proposal is skipped.
+- Turn it off per repo in `.pairo.yml`: `context: { propose_rules: false }`.
+- Confidence threshold: `CONTEXT_RULE_THRESHOLD` (default `0.7`).
+- `.pairo.md` is not yet read during reviews; that comes next.
 
 ### Environment Variables
 
@@ -142,6 +160,7 @@ ignore_categories:            # Suppress finding categories
 | `DATABASE_URL` | PostgreSQL connection string | `sqlite:///./pairo.db` |
 | `LLM_PROVIDER` | `gemini` or `fake` (for tests) | `gemini` |
 | `LLM_CACHE_TTL_DAYS` | Cache expiration | `30` |
+| `CONTEXT_RULE_THRESHOLD` | Min LLM confidence to propose a `.pairo.md` rule | `0.7` |
 
 ## How It Works
 

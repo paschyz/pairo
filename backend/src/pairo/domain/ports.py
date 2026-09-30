@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
+from pairo.domain.context_rule import RuleProposal
 from pairo.domain.decision import FindingDecision
 from pairo.domain.diff import AddedLine
 from pairo.domain.finding import Finding
@@ -42,6 +43,20 @@ class CodeHost(Protocol):
         self, owner: str, repo: str, path: str, ref: str
     ) -> str | None: ...
 
+    async def propose_file_change(
+        self,
+        owner: str,
+        repo: str,
+        *,
+        default_branch: str,
+        branch: str,
+        path: str,
+        content: str,
+        message: str,
+        title: str,
+        body: str,
+    ) -> str: ...
+
     async def get_comment(
         self, owner: str, repo: str, comment_id: int
     ) -> dict[str, object]: ...
@@ -70,6 +85,12 @@ class LLMReviewer(Protocol):
         axes: list[str],
         language: str,
     ) -> list[Finding]: ...
+
+
+class RuleClassifier(Protocol):
+    async def classify_rule(
+        self, reason: str, finding_text: str, file: str
+    ) -> RuleProposal: ...
 
 
 class ReviewRepository(Protocol):
