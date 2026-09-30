@@ -35,10 +35,17 @@ export interface Stats {
   total_output_tokens: number
 }
 
+export interface MemoryStats {
+  total_rejected: number
+  by_signal: Record<string, number>
+  by_category: Record<string, number>
+}
+
 export const useReviewStore = defineStore('reviews', () => {
   const reviews = ref<ReviewSummary[]>([])
   const current = ref<ReviewDetail | null>(null)
   const stats = ref<Stats>({ total_reviews: 0, total_findings: 0, total_input_tokens: 0, total_output_tokens: 0 })
+  const memory = ref<MemoryStats>({ total_rejected: 0, by_signal: {}, by_category: {} })
   const loading = ref(false)
 
   async function fetchReviews(offset = 0, limit = 20) {
@@ -68,5 +75,10 @@ export const useReviewStore = defineStore('reviews', () => {
     stats.value = await res.json()
   }
 
-  return { reviews, current, stats, loading, fetchReviews, fetchReview, fetchStats }
+  async function fetchMemoryStats() {
+    const res = await fetch('/api/stats/memory')
+    memory.value = await res.json()
+  }
+
+  return { reviews, current, stats, memory, loading, fetchReviews, fetchReview, fetchStats, fetchMemoryStats }
 })
