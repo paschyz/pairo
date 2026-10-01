@@ -2,7 +2,7 @@ from pairo.domain.finding import Finding
 from pairo.domain.ports import FileDiff
 
 # Increment when prompts change to invalidate cache
-PROMPT_VERSION = "5"
+PROMPT_VERSION = "6"
 
 _AXIS_DESCRIPTIONS: dict[str, str] = {
     "crafts": "naming, long functions, duplication, dead code, readability",
@@ -23,6 +23,7 @@ _OUTPUT = (
     '(consecutive lines for a range, starting at "line"), needs no other '
     "file change and you are confident. Omit it for architectural issues "
     "or large refactors."
+    "\nWrap code, HTML tags and identifiers in backticks in issue and suggestion."
 )
 
 
@@ -41,8 +42,9 @@ def build_prompt(
     if project_context.strip():
         parts.append(
             "\nProject rules (the repository's .pairo.md, written by its "
-            "maintainers). Follow them: never report something a rule allows or "
-            "excludes, and report code that breaks a rule."
+            "maintainers). They were written for this repository and apply to it "
+            "as written: never argue that a rule does not apply. Never report "
+            "something a rule allows or excludes, and report code that breaks a rule."
         )
         parts.append(f"<project_rules>\n{project_context.strip()}\n</project_rules>")
 

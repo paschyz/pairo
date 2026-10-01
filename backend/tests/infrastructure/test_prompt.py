@@ -69,3 +69,13 @@ def test_includes_project_rules_when_given() -> None:
 
 def test_no_project_rules_section_without_context() -> None:
     assert "<project_rules>" not in build_prompt([], [], ["crafts"], "en")
+
+
+def test_project_rules_apply_as_written() -> None:
+    prompt = build_prompt([], [], ["crafts"], "en", project_context="- No Redis")
+    assert "apply to it as written" in prompt
+    assert "never argue that a rule does not apply" in prompt
+
+
+def test_asks_for_backticks_around_code_and_tags() -> None:
+    assert "backticks" in build_prompt([], [], ["crafts"], "en")

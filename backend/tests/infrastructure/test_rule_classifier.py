@@ -112,3 +112,16 @@ async def test_fake_judge_persists_on_durable_keyword() -> None:
     assert await fake.write_rule("we never use jQuery", "f", "a.js") == (
         "we never use jQuery"
     )
+
+
+def test_write_prompt_asks_for_a_fact_not_a_condition() -> None:
+    prompt = build_write_prompt("c'est un back-office interne", "no alt", "a.html")
+    assert "fact about the project" in prompt
+    assert "never as a condition" in prompt
+
+
+def test_parsers_tolerate_markdown_fences() -> None:
+    fenced = '```json\n{"rule": "Ce projet est un back-office interne."}\n```'
+    assert parse_rule(fenced) == "Ce projet est un back-office interne."
+    verdict = 'Sure:\n```json\n{"persist": true, "confidence": 0.8}\n```'
+    assert parse_verdict(verdict) == RuleVerdict(True, 0.8)

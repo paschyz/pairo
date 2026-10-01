@@ -19,6 +19,12 @@ class _Rule(BaseModel):
     rule: StrictStr
 
 
+def _unfence(text: str) -> str:
+    """Keep the outer JSON object: models may wrap it in ```json fences or prose."""
+    start, end = text.find("{"), text.rfind("}")
+    return text[start : end + 1] if start != -1 and end > start else text
+
+
 def _defang(text: str) -> str:
     """Stop untrusted text from closing our data tags."""
     return text.replace("<", "&lt;")
@@ -56,12 +62,16 @@ Answer with JSON only:
 {{"rule": "<rule>"}}
 - One short imperative sentence, at most 280 characters, in the language of the reason.
 - It must be understandable later, without the review comment or the file.
+- It describes THIS project and applies to all of it: state it as a
+  fact about the project, never as a condition (write "This project is an internal
+  back-office: do not require alt attributes", not "Do not add alt attributes in
+  back-office projects").
 """
 
 
 def parse_verdict(text: str) -> RuleVerdict:
     try:
-        out = _Verdict.model_validate_json(text)
+        out = _Verdict.model_validate_json(_unfence(text))
     except ValidationError:
         logger.warning("Rule judge returned invalid output: %s", text[:200])
         return NO_VERDICT
@@ -70,7 +80,7 @@ def parse_verdict(text: str) -> RuleVerdict:
 
 def parse_rule(text: str) -> str:
     try:
-        return _Rule.model_validate_json(text).rule
+        return _Rule.model_validate_json(_unfence(text)).rule
     except ValidationError:
         logger.warning("Rule writer returned invalid output: %s", text[:200])
         return ""
