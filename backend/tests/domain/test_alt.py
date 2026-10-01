@@ -10,6 +10,8 @@ def test_img_without_alt() -> None:
     assert findings[0].axis == Axis.A11Y
     assert findings[0].line == 3
     assert findings[0].source == Source.RULE
+    # backticks: GitHub would otherwise render <img> as HTML and hide it
+    assert findings[0].issue == "`<img>` without `alt` attribute"
 
 
 def test_img_with_alt_is_ok() -> None:

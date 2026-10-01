@@ -4,7 +4,8 @@ import httpx
 import respx
 
 from pairo.domain.context_rule import NO_VERDICT, RuleVerdict
-from pairo.infrastructure.llm.factory import create_judge
+from pairo.domain.finding import Axis, Finding, Source
+from pairo.infrastructure.llm.factory import create_judge, create_rule_filter
 from pairo.infrastructure.llm.fake import FakeLLMReviewer
 from pairo.infrastructure.llm.jev_judge import DECISIONS_URL, JevJudge
 from pairo.infrastructure.llm.litellm_reviewer import LiteLLMReviewer
@@ -68,3 +69,60 @@ def test_factory_uses_jev_for_an_openrouter_judge_model() -> None:
 def test_factory_falls_back_to_the_chat_model_without_judge_model() -> None:
     assert isinstance(create_judge("openrouter", api_key="k"), LiteLLMReviewer)
     assert isinstance(create_judge("fake", model="x"), FakeLLMReviewer)
+
+
+def _finding(file: str, issue: str) -> Finding:
+    return Finding(Axis.A11Y, file, 1, issue, "fix", Source.RULE)
+
+
+@respx.mock
+async def test_excluded_by_rules_asks_one_question_per_finding() -> None:
+    route = respx.post(DECISIONS_URL).mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "answers": {
+                    "f0": {"type": "noul", "noul": 0.93},
+                    "f1": {"type": "noul", "noul": 0.1},
+                }
+            },
+        )
+    )
+    findings = [_finding("a.html", "no alt"), _finding("b.css", "low contrast")]
+    got = await _judge().excluded_by_rules("- No alt needed", findings)
+
+    assert got == [True, False]
+    body = json.loads(route.calls.last.request.content)
+    assert set(body["questions"]) == {"f0", "f1"}
+    assert body["questions"]["f1"]["type"] == "noul"
+    assert "(finding f1)" in body["questions"]["f1"]["instructions"]
+    assert body["state"] == {
+        "project_rules": "- No alt needed",
+        "findings": [
+            {"id": "f0", "file": "a.html", "issue": "no alt"},
+            {"id": "f1", "file": "b.css", "issue": "low contrast"},
+        ],
+    }
+
+
+@respx.mock
+async def test_excluded_by_rules_keeps_everything_on_error() -> None:
+    respx.post(DECISIONS_URL).mock(return_value=httpx.Response(500))
+    findings = [_finding("a.html", "no alt")]
+    assert await _judge().excluded_by_rules("- r", findings) == [False]
+
+
+@respx.mock
+async def test_excluded_by_rules_without_findings_makes_no_call() -> None:
+    route = respx.post(DECISIONS_URL)
+    assert await _judge().excluded_by_rules("- r", []) == []
+    assert not route.called
+
+
+def test_rule_filter_is_jev_only() -> None:
+    assert isinstance(
+        create_rule_filter("openrouter", api_key="k", model="~typesafe/jev-latest"),
+        JevJudge,
+    )
+    assert create_rule_filter("openrouter", api_key="k", model="") is None
+    assert create_rule_filter("gemini", api_key="k", model="x") is None

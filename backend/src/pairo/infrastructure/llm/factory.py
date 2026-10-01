@@ -64,3 +64,19 @@ def create_judge(
             api_key=api_key,
         )
     return create_reviewer(provider, api_key, model, rpm_limit)
+
+
+def create_rule_filter(
+    provider: str,
+    api_key: str = "",
+    model: str = "",
+    rpm_limit: int = 15,
+) -> JevJudge | None:
+    """Jev checks hard-coded rule findings against .pairo.md; no Jev, no filter."""
+    if provider != "openrouter" or not model:
+        return None
+    return JevJudge(
+        model=model,
+        rate_limiter=_shared_limiter(provider, rpm_limit),
+        api_key=api_key,
+    )

@@ -400,3 +400,68 @@ async def test_pairo_md_not_fetched_when_llm_is_skipped() -> None:
     )
     assert not llm.called
     assert all(path != ".pairo.md" for path, _ in code_host.fetched)
+
+
+class FakeRuleFilter:
+    def __init__(self, exclude: bool) -> None:
+        self.exclude = exclude
+        self.calls: list[tuple[str, list[Finding]]] = []
+
+    async def excluded_by_rules(
+        self, project_rules: str, findings: list[Finding]
+    ) -> list[bool]:
+        self.calls.append((project_rules, findings))
+        return [self.exclude] * len(findings)
+
+
+def _img_file() -> list[FileDiff]:
+    return [FileDiff("App.vue", [AddedLine(3, '  <img src="logo.png">')])]
+
+
+def _a11y(code_host: FakeCodeHost) -> list[Finding]:
+    assert code_host.posted_review is not None
+    return [f for f in code_host.posted_review.findings if f.axis == Axis.A11Y]
+
+
+async def test_pairo_md_rule_drops_excluded_rule_finding() -> None:
+    code_host = FakeCodeHost(_img_file(), pairo_md="- No alt needed")
+    llm = FakeLLM()
+    rule_filter = FakeRuleFilter(exclude=True)
+    await _review_with(code_host, llm, rule_filter=rule_filter)
+    assert _a11y(code_host) == []
+    assert rule_filter.calls[0][0] == "- No alt needed"
+    assert len(rule_filter.calls[0][1]) == 1
+
+
+async def test_rule_finding_kept_when_not_excluded() -> None:
+    code_host = FakeCodeHost(_img_file(), pairo_md="- No Redis")
+    await _review_with(code_host, FakeLLM(), rule_filter=FakeRuleFilter(exclude=False))
+    assert len(_a11y(code_host)) == 1
+
+
+async def test_no_pairo_md_means_no_filter_call() -> None:
+    code_host = FakeCodeHost(_img_file())
+    rule_filter = FakeRuleFilter(exclude=True)
+    await _review_with(code_host, FakeLLM(), rule_filter=rule_filter)
+    assert rule_filter.calls == []
+    assert len(_a11y(code_host)) == 1
+
+
+async def test_without_rule_filter_rule_findings_are_kept() -> None:
+    code_host = FakeCodeHost(_img_file(), pairo_md="- No alt needed")
+    await _review_with(code_host, FakeLLM())
+    assert len(_a11y(code_host)) == 1
+
+
+async def test_rule_filter_applies_when_llm_is_skipped() -> None:
+    code_host = FakeCodeHost(_img_file(), pairo_md="- No alt needed")
+    llm = FakeLLM()
+    await _review_with(
+        code_host,
+        llm,
+        rule_filter=FakeRuleFilter(exclude=True),
+        review_repo=FakeReviewRepo(today_count=50),
+        daily_quota=50,
+    )
+    assert not llm.called
+    assert _a11y(code_host) == []

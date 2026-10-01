@@ -63,6 +63,12 @@ class LLMReviewer(Protocol):
     ) -> list[Finding]: ...
 
 
+class RuleFilter(Protocol):
+    async def excluded_by_rules(
+        self, project_rules: str, findings: list[Finding]
+    ) -> list[bool]: ...
+
+
 class ReviewPullRequest:
     def __init__(
         self,
@@ -71,12 +77,14 @@ class ReviewPullRequest:
         review_repo: Any = None,
         daily_quota: int = 0,
         decision_repo: Any = None,
+        rule_filter: RuleFilter | None = None,
     ) -> None:
         self._code_host: CodeHost = code_host
         self._llm: LLMReviewer = llm_reviewer
         self._repo = review_repo
         self._daily_quota = daily_quota
         self._decision_repo = decision_repo
+        self._rule_filter = rule_filter
 
     async def _sync_github_decisions(
         self, owner: str, repo: str, pr_number: int
@@ -149,18 +157,31 @@ class ReviewPullRequest:
                 skip_llm = True
                 logger.warning("Daily quota reached (%d), skipping LLM", count)
 
-        if has_added_lines and not skip_llm:
+        run_llm = has_added_lines and not skip_llm
+        project_rules = ""
+        if findings or run_llm:
             # Rules come from the base branch: they apply once merged, and a PR
             # can't rewrite the rules its own review follows.
             pairo_md = await self._code_host.get_repo_file(
                 owner, repo, PAIRO_MD, base_ref or head_sha
             )
+            project_rules = (pairo_md or "")[:MAX_FILE_CHARS]
+
+        if findings and project_rules.strip() and self._rule_filter:
+            excluded = await self._rule_filter.excluded_by_rules(
+                project_rules, findings
+            )
+            findings = [
+                f for f, drop in zip(findings, excluded, strict=True) if not drop
+            ]
+
+        if run_llm:
             llm_findings = await self._llm.review(
                 files,
                 findings,
                 config.axes,
                 config.language,
-                project_context=(pairo_md or "")[:MAX_FILE_CHARS],
+                project_context=project_rules,
             )
             findings.extend(llm_findings)
 

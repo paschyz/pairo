@@ -15,7 +15,11 @@ from pairo.domain.decision import DecisionSignal, DecisionStatus, FindingDecisio
 from pairo.domain.marker import parse_marker
 from pairo.infrastructure.github.auth import GitHubAppAuth
 from pairo.infrastructure.github.client import GitHubClient
-from pairo.infrastructure.llm.factory import create_judge, create_reviewer
+from pairo.infrastructure.llm.factory import (
+    create_judge,
+    create_reviewer,
+    create_rule_filter,
+)
 from pairo.infrastructure.persistence.decision_repo import SqlDecisionRepository
 from pairo.infrastructure.persistence.engine import get_session
 from pairo.infrastructure.persistence.repository import SqlReviewRepository
@@ -112,6 +116,12 @@ async def _run_review(payload: dict[str, Any], delivery_id: str) -> None:
             review_repo=review_repo,
             daily_quota=settings.daily_review_quota,
             decision_repo=decision_repo,
+            rule_filter=create_rule_filter(
+                provider=settings.llm_provider,
+                api_key=_llm_api_key(),
+                model=settings.llm_model_judge,
+                rpm_limit=settings.llm_rpm_limit,
+            ),
         )
         await uc.execute(
             owner=owner,

@@ -155,6 +155,8 @@ Further rules are added to the same PR while it is open.
 - Each review reads `.pairo.md` from the PR's base branch and passes it to the LLM as
   project rules: a rule applies once its PR is merged, and a PR cannot change the rules
   of its own review. You can also edit `.pairo.md` by hand (max 8000 characters read).
+- Hard-coded checks (missing `alt`, low contrast) don't go through the LLM: when
+  `LLM_MODEL_JUDGE` (Jev) is set, Jev drops the ones a `.pairo.md` rule excludes.
 
 ### Environment Variables
 
