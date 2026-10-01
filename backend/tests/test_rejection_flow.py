@@ -314,18 +314,21 @@ async def test_jev_judges_and_default_model_writes(
     proposer: type[RecordingProposer],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    models: list[str] = []
+    models: list[tuple[str, str]] = []
     monkeypatch.setattr(webhook.settings, "llm_model_judge", "~typesafe/jev-latest")
     monkeypatch.setattr(webhook.settings, "llm_model_default", "default-model")
     monkeypatch.setattr(
-        webhook, "create_reviewer", lambda **kw: models.append(kw["model"])
+        webhook, "create_judge", lambda **kw: models.append(("judge", kw["model"]))
+    )
+    monkeypatch.setattr(
+        webhook, "create_reviewer", lambda **kw: models.append(("writer", kw["model"]))
     )
     await _post(
         client,
         "pull_request_review_comment",
         _reply_payload("@pairo ignore on utilise pas redis", assoc="OWNER"),
     )
-    assert models == ["~typesafe/jev-latest", "default-model"]
+    assert models == [("judge", "~typesafe/jev-latest"), ("writer", "default-model")]
 
 
 async def test_default_branch_comes_from_the_payload(

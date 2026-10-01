@@ -15,7 +15,7 @@ from pairo.domain.decision import DecisionSignal, DecisionStatus, FindingDecisio
 from pairo.domain.marker import parse_marker
 from pairo.infrastructure.github.auth import GitHubAppAuth
 from pairo.infrastructure.github.client import GitHubClient
-from pairo.infrastructure.llm.factory import create_reviewer
+from pairo.infrastructure.llm.factory import create_judge, create_reviewer
 from pairo.infrastructure.persistence.decision_repo import SqlDecisionRepository
 from pairo.infrastructure.persistence.engine import get_session
 from pairo.infrastructure.persistence.repository import SqlReviewRepository
@@ -60,12 +60,28 @@ def _load_private_key() -> str:
         return f.read()
 
 
-def _make_llm(model: str = "") -> Any:
+def _llm_api_key() -> str:
+    return settings.llm_api_key or (
+        settings.gemini_api_key if settings.llm_provider == "gemini" else ""
+    )
+
+
+def _make_llm() -> Any:
     return create_reviewer(
         provider=settings.llm_provider,
-        api_key=settings.llm_api_key
-        or (settings.gemini_api_key if settings.llm_provider == "gemini" else ""),
-        model=model or settings.llm_model_default,
+        api_key=_llm_api_key(),
+        model=settings.llm_model_default,
+        rpm_limit=settings.llm_rpm_limit,
+    )
+
+
+def _make_judge() -> Any:
+    if not settings.llm_model_judge:
+        return _make_llm()
+    return create_judge(
+        provider=settings.llm_provider,
+        api_key=_llm_api_key(),
+        model=settings.llm_model_judge,
         rpm_limit=settings.llm_rpm_limit,
     )
 
@@ -127,7 +143,7 @@ async def _propose_rule(
     try:
         uc = ProposeContextRule(
             code_host,
-            judge=_make_llm(settings.llm_model_judge),
+            judge=_make_judge(),
             writer=_make_llm(),
             threshold=settings.context_rule_threshold,
         )

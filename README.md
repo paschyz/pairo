@@ -151,7 +151,7 @@ Further rules are added to the same PR while it is open.
   (existing installations must accept the new permissions). Without them the review
   still works and the comment is still ignored; only the proposal is skipped.
 - Turn it off per repo in `.pairo.yml`: `context: { propose_rules: false }`.
-- Confidence threshold: `CONTEXT_RULE_THRESHOLD` (default `0.7`).
+- Confidence threshold: `CONTEXT_RULE_THRESHOLD` (default `0.5`).
 - `.pairo.md` is not yet read during reviews; that comes next.
 
 ### Environment Variables
@@ -164,8 +164,8 @@ Further rules are added to the same PR while it is open.
 | `DATABASE_URL` | PostgreSQL connection string | `sqlite:///./pairo.db` |
 | `LLM_PROVIDER` | `gemini` or `fake` (for tests) | `gemini` |
 | `LLM_CACHE_TTL_DAYS` | Cache expiration | `30` |
-| `LLM_MODEL_JUDGE` | Model deciding if an ignore reason is a project rule | `LLM_MODEL_DEFAULT` |
-| `CONTEXT_RULE_THRESHOLD` | Min judge confidence to propose a `.pairo.md` rule | `0.7` |
+| `LLM_MODEL_JUDGE` | Jev decision model (OpenRouter Decisions API) judging if an ignore reason is a project rule; empty = the chat model judges | — |
+| `CONTEXT_RULE_THRESHOLD` | Min judge confidence to propose a `.pairo.md` rule | `0.5` |
 
 ## How It Works
 

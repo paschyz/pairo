@@ -2,6 +2,7 @@ from functools import lru_cache
 from typing import Any
 
 from pairo.infrastructure.llm.fake import FakeLLMReviewer
+from pairo.infrastructure.llm.jev_judge import JevJudge
 from pairo.infrastructure.llm.litellm_reviewer import LiteLLMReviewer
 from pairo.infrastructure.llm.rate_limiter import RateLimiter
 
@@ -47,3 +48,19 @@ def create_reviewer(
         )
     msg = f"unknown LLM provider: {provider}"
     raise ValueError(msg)
+
+
+def create_judge(
+    provider: str,
+    api_key: str = "",
+    model: str = "",
+    rpm_limit: int = 15,
+) -> Any:
+    """Jev (OpenRouter Decisions API) for a set judge model, else the chat LLM."""
+    if provider == "openrouter" and model:
+        return JevJudge(
+            model=model,
+            rate_limiter=_shared_limiter(provider, rpm_limit),
+            api_key=api_key,
+        )
+    return create_reviewer(provider, api_key, model, rpm_limit)
