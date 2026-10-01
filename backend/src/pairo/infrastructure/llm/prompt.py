@@ -2,7 +2,7 @@ from pairo.domain.finding import Finding
 from pairo.domain.ports import FileDiff
 
 # Increment when prompts change to invalidate cache
-PROMPT_VERSION = "4"
+PROMPT_VERSION = "5"
 
 _AXIS_DESCRIPTIONS: dict[str, str] = {
     "crafts": "naming, long functions, duplication, dead code, readability",
@@ -31,11 +31,20 @@ def build_prompt(
     existing_findings: list[Finding],
     axes: list[str],
     language: str,
+    project_context: str = "",
 ) -> str:
     parts: list[str] = [_SYSTEM, "\nAxes to check:"]
 
     for axis in axes:
         parts.append(f"- {axis}: {_AXIS_DESCRIPTIONS.get(axis, axis)}")
+
+    if project_context.strip():
+        parts.append(
+            "\nProject rules (the repository's .pairo.md, written by its "
+            "maintainers). Follow them: never report something a rule allows or "
+            "excludes, and report code that breaks a rule."
+        )
+        parts.append(f"<project_rules>\n{project_context.strip()}\n</project_rules>")
 
     if files:
         parts.append("\nFiles:")

@@ -59,3 +59,13 @@ def test_output_format_instruction() -> None:
 def test_non_english_language_adds_instruction() -> None:
     assert '"fr"' in build_prompt([], [], ["crafts"], "fr")
     assert "language with code" not in build_prompt([], [], ["crafts"], "en")
+
+
+def test_includes_project_rules_when_given() -> None:
+    prompt = build_prompt([], [], ["crafts"], "en", project_context="- No Redis")
+    assert "<project_rules>\n- No Redis\n</project_rules>" in prompt
+    assert ".pairo.md" in prompt
+
+
+def test_no_project_rules_section_without_context() -> None:
+    assert "<project_rules>" not in build_prompt([], [], ["crafts"], "en")

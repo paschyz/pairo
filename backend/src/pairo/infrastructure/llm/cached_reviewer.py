@@ -51,6 +51,7 @@ class CachedLLMReviewer:
         existing_findings: list[Finding],
         axes: list[str],
         language: str,
+        project_context: str = "",
     ) -> list[Finding]:
         # Build cache key from file contents
         files_content = {}
@@ -61,7 +62,8 @@ class CachedLLMReviewer:
         key = compute_cache_key(
             files_content=files_content,
             axes=axes,
-            config_hash=self._config_hash,
+            # A .pairo.md change must not serve reviews cached under the old rules.
+            config_hash=self._config_hash + project_context,
             prompt_version=self._prompt_version,
             model=self._model,
         )
@@ -77,7 +79,7 @@ class CachedLLMReviewer:
 
         # Cache miss — delegate to inner LLM
         findings: list[Finding] = await self._inner.review(
-            files, existing_findings, axes, language
+            files, existing_findings, axes, language, project_context
         )
         self.last_input_tokens = self._inner.last_input_tokens
         self.last_output_tokens = self._inner.last_output_tokens

@@ -201,3 +201,14 @@ def test_parse_findings_coerces_string_line_numbers() -> None:
     a, b = _parse_findings(json.dumps(raw))
     assert (a.line, a.code_suggestion.end_line) == (10, 11)  # type: ignore[union-attr]
     assert b.line is None
+
+
+@patch("pairo.infrastructure.llm.litellm_reviewer.litellm")
+async def test_litellm_reviewer_sends_project_context(mock_litellm: Mock) -> None:
+    mock_litellm.acompletion = AsyncMock(return_value=_make_response([]))
+    reviewer = LiteLLMReviewer(model="m", rate_limiter=RateLimiter(rpm=15))
+    files = [FileDiff("app.py", [AddedLine(1, "x = 1")])]
+    await reviewer.review(files, [], ["crafts"], "en", project_context="- No Redis")
+
+    prompt = mock_litellm.acompletion.call_args[1]["messages"][0]["content"]
+    assert "- No Redis" in prompt

@@ -16,6 +16,7 @@ class FakeLLMReviewer:
         existing_findings: list[Finding],
         axes: list[str],
         language: str,
+        project_context: str = "",
     ) -> list[Finding]:
         findings: list[Finding] = []
         axis = Axis(axes[0]) if axes else Axis.CRAFTS

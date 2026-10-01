@@ -122,6 +122,7 @@ async def _run_review(payload: dict[str, Any], delivery_id: str) -> None:
             before_sha=before_sha,
             delivery_id=delivery_id,
             pr_created_at=_parse_github_time(pr.get("created_at")),
+            base_ref=pr.get("base", {}).get("ref"),
         )
         logger.info("Review posted for %s#%s", repo_full, pr_number)
     except Exception:

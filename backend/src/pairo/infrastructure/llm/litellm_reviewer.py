@@ -92,8 +92,9 @@ class LiteLLMReviewer:
         existing_findings: list[Finding],
         axes: list[str],
         language: str,
+        project_context: str = "",
     ) -> list[Finding]:
-        prompt = build_prompt(files, existing_findings, axes, language)
+        prompt = build_prompt(files, existing_findings, axes, language, project_context)
         try:
             await self._rate_limiter.acquire()
             response = await litellm.acompletion(

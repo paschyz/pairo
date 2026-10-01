@@ -110,6 +110,9 @@ def _mock_github_api() -> respx.Route:
     respx.get(f"{GH}/repos/owner/repo/contents/.pairo.yml").mock(
         return_value=httpx.Response(404)
     )
+    respx.get(f"{GH}/repos/owner/repo/contents/.pairo.md").mock(
+        return_value=httpx.Response(404)
+    )
     return respx.post(f"{GH}/repos/owner/repo/pulls/1/reviews").mock(
         return_value=httpx.Response(200, json={})
     )

@@ -1,4 +1,5 @@
 from pairo.application.review_pull_request import ReviewPullRequest
+from pairo.domain.context_rule import MAX_FILE_CHARS
 from pairo.domain.diff import AddedLine
 from pairo.domain.finding import Axis, Finding, Source
 from pairo.domain.ports import FileDiff
@@ -6,9 +7,15 @@ from pairo.domain.review import Review
 
 
 class FakeCodeHost:
-    def __init__(self, files: list[FileDiff], config_yaml: str | None = None) -> None:
+    def __init__(
+        self,
+        files: list[FileDiff],
+        config_yaml: str | None = None,
+        pairo_md: str | None = None,
+    ) -> None:
         self._files = files
-        self._config_yaml = config_yaml
+        self._repo_files = {".pairo.yml": config_yaml, ".pairo.md": pairo_md}
+        self.fetched: list[tuple[str, str]] = []
         self.posted_review: Review | None = None
 
     async def get_pull_request_files(
@@ -32,13 +39,15 @@ class FakeCodeHost:
     async def get_repo_file(
         self, owner: str, repo: str, path: str, ref: str
     ) -> str | None:
-        return self._config_yaml
+        self.fetched.append((path, ref))
+        return self._repo_files.get(path)
 
 
 class FakeLLM:
     def __init__(self, findings: list[Finding] | None = None) -> None:
         self._findings = findings or []
         self.called = False
+        self.project_context: str | None = None
         self.last_input_tokens: int = 0
         self.last_output_tokens: int = 0
 
@@ -48,8 +57,10 @@ class FakeLLM:
         existing_findings: list[Finding],
         axes: list[str],
         language: str,
+        project_context: str = "",
     ) -> list[Finding]:
         self.called = True
+        self.project_context = project_context
         self.last_input_tokens = 100
         self.last_output_tokens = 50
         return self._findings
@@ -343,3 +354,49 @@ async def test_resolved_thread_suppresses_finding_without_command() -> None:
     await uc.execute(owner="o", repo="r", pr_number=1, head_sha="s", action="opened")
     assert host.posted_review is not None
     assert host.posted_review.findings == []
+
+
+async def _review_with(code_host: FakeCodeHost, llm: FakeLLM, **kw: object) -> None:
+    uc = ReviewPullRequest(code_host=code_host, llm_reviewer=llm, **kw)  # type: ignore[arg-type]
+    await uc.execute(
+        owner="o",
+        repo="r",
+        pr_number=1,
+        head_sha="abc",
+        action="opened",
+        base_ref="main",
+    )
+
+
+def _one_file() -> list[FileDiff]:
+    return [FileDiff("main.py", [AddedLine(1, "x = 1")])]
+
+
+async def test_pairo_md_from_base_branch_reaches_the_llm() -> None:
+    code_host = FakeCodeHost(_one_file(), pairo_md="# Pairo context\n- No Redis\n")
+    llm = FakeLLM()
+    await _review_with(code_host, llm)
+    assert llm.project_context == "# Pairo context\n- No Redis\n"
+    assert (".pairo.md", "main") in code_host.fetched
+
+
+async def test_missing_pairo_md_gives_empty_context() -> None:
+    llm = FakeLLM()
+    await _review_with(FakeCodeHost(_one_file()), llm)
+    assert llm.project_context == ""
+
+
+async def test_oversized_pairo_md_is_capped() -> None:
+    llm = FakeLLM()
+    await _review_with(FakeCodeHost(_one_file(), pairo_md="x" * 20000), llm)
+    assert llm.project_context == "x" * MAX_FILE_CHARS
+
+
+async def test_pairo_md_not_fetched_when_llm_is_skipped() -> None:
+    code_host = FakeCodeHost(_one_file(), pairo_md="- No Redis")
+    llm = FakeLLM()
+    await _review_with(
+        code_host, llm, review_repo=FakeReviewRepo(today_count=50), daily_quota=50
+    )
+    assert not llm.called
+    assert all(path != ".pairo.md" for path, _ in code_host.fetched)

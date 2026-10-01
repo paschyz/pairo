@@ -2,6 +2,8 @@ import logging
 from datetime import datetime
 from typing import Any, Protocol
 
+from pairo.application.propose_context_rule import PATH as PAIRO_MD
+from pairo.domain.context_rule import MAX_FILE_CHARS
 from pairo.domain.decision import DecisionStatus
 from pairo.domain.decision_rebuild import rebuild_decisions_from_comments
 from pairo.domain.filter_findings import filter_findings, memory_summary_line
@@ -57,6 +59,7 @@ class LLMReviewer(Protocol):
         existing_findings: list[Finding],
         axes: list[str],
         language: str,
+        project_context: str = "",
     ) -> list[Finding]: ...
 
 
@@ -113,6 +116,7 @@ class ReviewPullRequest:
         before_sha: str | None = None,
         delivery_id: str = "",
         pr_created_at: datetime | None = None,
+        base_ref: str | None = None,
     ) -> None:
         config_raw = await self._code_host.get_repo_file(
             owner, repo, ".pairo.yml", head_sha
@@ -146,8 +150,17 @@ class ReviewPullRequest:
                 logger.warning("Daily quota reached (%d), skipping LLM", count)
 
         if has_added_lines and not skip_llm:
+            # Rules come from the base branch: they apply once merged, and a PR
+            # can't rewrite the rules its own review follows.
+            pairo_md = await self._code_host.get_repo_file(
+                owner, repo, PAIRO_MD, base_ref or head_sha
+            )
             llm_findings = await self._llm.review(
-                files, findings, config.axes, config.language
+                files,
+                findings,
+                config.axes,
+                config.language,
+                project_context=(pairo_md or "")[:MAX_FILE_CHARS],
             )
             findings.extend(llm_findings)
 

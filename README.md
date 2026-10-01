@@ -152,7 +152,9 @@ Further rules are added to the same PR while it is open.
   still works and the comment is still ignored; only the proposal is skipped.
 - Turn it off per repo in `.pairo.yml`: `context: { propose_rules: false }`.
 - Confidence threshold: `CONTEXT_RULE_THRESHOLD` (default `0.5`).
-- `.pairo.md` is not yet read during reviews; that comes next.
+- Each review reads `.pairo.md` from the PR's base branch and passes it to the LLM as
+  project rules: a rule applies once its PR is merged, and a PR cannot change the rules
+  of its own review. You can also edit `.pairo.md` by hand (max 8000 characters read).
 
 ### Environment Variables
 
