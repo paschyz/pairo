@@ -9,13 +9,12 @@ _TRUSTED = {"OWNER", "MEMBER", "COLLABORATOR"}
 
 
 @dataclass(frozen=True)
-class RuleProposal:
+class RuleVerdict:
     persist: bool
     confidence: float
-    rule: str
 
 
-NO_RULE = RuleProposal(persist=False, confidence=0.0, rule="")
+NO_VERDICT = RuleVerdict(persist=False, confidence=0.0)
 
 
 def is_trusted(author_association: str | None) -> bool:
@@ -26,12 +25,8 @@ def _clean(rule: str) -> str:
     return " ".join(rule.split())[:MAX_RULE_CHARS].strip()
 
 
-def accept(proposal: RuleProposal, threshold: float) -> bool:
-    return (
-        proposal.persist
-        and proposal.confidence >= threshold
-        and bool(_clean(proposal.rule))
-    )
+def accept(verdict: RuleVerdict, threshold: float) -> bool:
+    return verdict.persist and verdict.confidence >= threshold
 
 
 def _norm(line: str) -> str:
@@ -39,8 +34,10 @@ def _norm(line: str) -> str:
 
 
 def merge_rule(existing: str | None, rule: str) -> str | None:
-    """Append `rule` to the file. None if duplicate or the file would exceed the cap."""
+    """Append `rule` to the file. None if blank, duplicate or the file is full."""
     rule = _clean(rule)
+    if not rule:
+        return None
     base = existing if existing else HEADER + "\n"
     if any(_norm(line) == _norm(rule) for line in base.splitlines()):
         return None

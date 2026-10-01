@@ -47,7 +47,7 @@ Pairo is different:
 |---------|-------------|
 | **AI Review** | Posts inline review comments on every PR with actionable findings |
 | **Memory System** | Tracks rejected suggestions and never repeats them |
-| **Feedback Commands** | Reply `@pairo ignore` or `@pairo valid` to control findings |
+| **Feedback Command** | Reply `@pairo ignore [reason]` to drop a finding; a project-wide reason becomes a `.pairo.md` rule |
 | **Signal Detection** | Picks up thumbs-down reactions, resolved threads, and explicit commands |
 | **Content Fingerprinting** | Identifies findings by code content, not line numbers — survives rebases |
 | **Persistent Rules** | Frequently rejected categories auto-suggest `.pairo.yml` rules |
@@ -69,8 +69,11 @@ Pairo posts inline comments with categorized findings on every pull request:
 ### Feedback Loop
 
 ```
-You:    @pairo ignore — naming is fine for internal utils
-Pairo:  ✅ Got it. Finding ignored for this PR.
+You:    @pairo ignore naming is fine for internal utils
+Pairo:  👍 Ignored on this PR.
+
+You:    @pairo ignore we don't use Redis in this project
+Pairo:  👍 Ignored on this PR. Rule proposed in `.pairo.md`: <PR link>
 ```
 
 Next review, that suggestion won't appear.
@@ -138,9 +141,10 @@ context:
 ### `.pairo.md` (project context)
 
 When a repo owner, member or collaborator replies `@pairo ignore <reason>` to a Pairo
-comment and the reason states a lasting project rule (for example "we don't use
-jQuery here"), Pairo opens a pull request on the branch `pairo/context` adding the
-rule to `.pairo.md`. Nothing is pushed to your default branch: review and merge the PR.
+comment, a judge model (`LLM_MODEL_JUDGE`) decides whether the reason states a lasting
+project rule (for example "we don't use jQuery here"). If it does, the default model
+writes the rule and Pairo opens a pull request on the branch `pairo/context` adding it
+to `.pairo.md`. The bot's single reply says which of the two happened. Nothing is pushed to your default branch: review and merge the PR.
 Further rules are added to the same PR while it is open.
 
 - Requires the GitHub App permissions **Contents: write** and **Pull requests: write**
@@ -160,7 +164,8 @@ Further rules are added to the same PR while it is open.
 | `DATABASE_URL` | PostgreSQL connection string | `sqlite:///./pairo.db` |
 | `LLM_PROVIDER` | `gemini` or `fake` (for tests) | `gemini` |
 | `LLM_CACHE_TTL_DAYS` | Cache expiration | `30` |
-| `CONTEXT_RULE_THRESHOLD` | Min LLM confidence to propose a `.pairo.md` rule | `0.7` |
+| `LLM_MODEL_JUDGE` | Model deciding if an ignore reason is a project rule | `LLM_MODEL_DEFAULT` |
+| `CONTEXT_RULE_THRESHOLD` | Min judge confidence to propose a `.pairo.md` rule | `0.7` |
 
 ## How It Works
 

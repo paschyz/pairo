@@ -3,14 +3,12 @@
 import re
 from dataclasses import dataclass
 
-_COMMAND_RE = re.compile(r"@pairo\s+(ignore|valid)(?:\s+(.+))?", re.IGNORECASE)
-
-_VALID_ACTIONS = {"ignore", "valid"}
+_COMMAND_RE = re.compile(r"@pairo\s+(ignore)(?:\s+(.+))?", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
 class PairoCommand:
-    action: str  # "ignore" or "valid"
+    action: str  # "ignore"
     reason: str | None
 
 

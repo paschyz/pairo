@@ -3,8 +3,8 @@ import pytest
 from pairo.domain.context_rule import (
     MAX_FILE_CHARS,
     MAX_RULE_CHARS,
-    NO_RULE,
-    RuleProposal,
+    NO_VERDICT,
+    RuleVerdict,
     accept,
     is_trusted,
     merge_rule,
@@ -21,24 +21,20 @@ def test_untrusted_associations(assoc: str | None) -> None:
     assert not is_trusted(assoc)
 
 
-def test_no_rule_is_never_accepted() -> None:
-    assert not accept(NO_RULE, 0.0)
+def test_no_verdict_is_never_accepted() -> None:
+    assert not accept(NO_VERDICT, 0.0)
 
 
 def test_accept_refuses_persist_false() -> None:
-    assert not accept(RuleProposal(False, 1.0, "Use Vue"), 0.7)
+    assert not accept(RuleVerdict(False, 1.0), 0.7)
 
 
 def test_accept_refuses_below_threshold() -> None:
-    assert not accept(RuleProposal(True, 0.69, "Use Vue"), 0.7)
+    assert not accept(RuleVerdict(True, 0.69), 0.7)
 
 
 def test_accept_at_exact_threshold() -> None:
-    assert accept(RuleProposal(True, 0.7, "Use Vue"), 0.7)
-
-
-def test_accept_refuses_blank_rule() -> None:
-    assert not accept(RuleProposal(True, 0.9, "  \n "), 0.7)
+    assert accept(RuleVerdict(True, 0.7), 0.7)
 
 
 def test_merge_creates_file_with_header() -> None:
@@ -62,6 +58,10 @@ def test_merge_duplicate_ignores_case_and_spaces() -> None:
 
 def test_merge_returns_none_when_file_would_overflow() -> None:
     assert merge_rule("x" * MAX_FILE_CHARS, "b") is None
+
+
+def test_merge_returns_none_for_blank_rule() -> None:
+    assert merge_rule(None, "  \n ") is None
 
 
 def test_merge_flattens_multiline_rule() -> None:

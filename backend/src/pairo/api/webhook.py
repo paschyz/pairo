@@ -60,12 +60,12 @@ def _load_private_key() -> str:
         return f.read()
 
 
-def _make_llm() -> Any:
+def _make_llm(model: str = "") -> Any:
     return create_reviewer(
         provider=settings.llm_provider,
         api_key=settings.llm_api_key
         or (settings.gemini_api_key if settings.llm_provider == "gemini" else ""),
-        model=settings.llm_model_default,
+        model=model or settings.llm_model_default,
         rpm_limit=settings.llm_rpm_limit,
     )
 
@@ -120,15 +120,18 @@ async def _propose_rule(
     payload: dict[str, Any],
     parent: dict[str, Any],
     reason: str,
-) -> None:
+) -> str | None:
     """Best effort: the rejection is already saved, a failure here must not undo it."""
-    comment = payload["comment"]
     repo_full = payload["repository"]["full_name"]
     owner, repo = repo_full.split("/")
-    pr_number = payload["pull_request"]["number"]
     try:
-        uc = ProposeContextRule(code_host, _make_llm(), settings.context_rule_threshold)
-        reply = await uc.execute(
+        uc = ProposeContextRule(
+            code_host,
+            judge=_make_llm(settings.llm_model_judge),
+            writer=_make_llm(),
+            threshold=settings.context_rule_threshold,
+        )
+        return await uc.execute(
             owner=owner,
             repo=repo,
             default_branch=payload["repository"].get("default_branch", "main"),
@@ -136,16 +139,17 @@ async def _propose_rule(
             finding_text=parent.get("body", "").split("<!--")[0].strip(),
             file=parent.get("path", ""),
         )
-        if reply:
-            await code_host.reply_to_comment(
-                owner, repo, pr_number, comment["id"], reply
-            )
     except Exception:
-        logger.exception("Rule proposal failed for %s#%s", repo_full, pr_number)
+        logger.exception(
+            "Rule proposal failed for %s#%s",
+            repo_full,
+            payload["pull_request"]["number"],
+        )
+        return None
 
 
 async def _handle_comment(payload: dict[str, Any]) -> None:
-    """Process @pairo command from a review comment reply."""
+    """Process `@pairo ignore [reason]` replied to a Pairo review comment."""
     comment = payload["comment"]
     repo_full = payload["repository"]["full_name"]
     pr_number = payload["pull_request"]["number"]
@@ -172,10 +176,8 @@ async def _handle_comment(payload: dict[str, Any]) -> None:
 
         session = get_session()
         try:
-            decision_repo = SqlDecisionRepository(session)
-
-            if cmd.action == "ignore":
-                decision = FindingDecision(
+            await SqlDecisionRepository(session).save(
+                FindingDecision(
                     repo=repo_full,
                     pr_number=pr_number,
                     fingerprint=marker["fp"],
@@ -187,47 +189,16 @@ async def _handle_comment(payload: dict[str, Any]) -> None:
                     decided_by=user,
                     github_comment_id=parent_id,
                 )
-                await decision_repo.save(decision)
-                await code_host.reply_to_comment(
-                    owner,
-                    repo,
-                    pr_number,
-                    comment["id"],
-                    "\U0001f44d Noted, I will not raise this comment again on this PR.",
-                )
-            elif cmd.action == "valid":
-                existing = await decision_repo.get_by_fingerprint(
-                    repo_full, pr_number, marker["fp"]
-                )
-                if existing and existing.status == DecisionStatus.REJECTED:
-                    decision = FindingDecision(
-                        repo=repo_full,
-                        pr_number=pr_number,
-                        fingerprint=marker["fp"],
-                        axis=marker["axis"],
-                        category=marker["cat"],
-                        status=DecisionStatus.ACCEPTED,
-                        signal=DecisionSignal.COMMAND,
-                        decided_by=user,
-                        github_comment_id=parent_id,
-                    )
-                    await decision_repo.save(decision)
-                    await code_host.reply_to_comment(
-                        owner,
-                        repo,
-                        pr_number,
-                        comment["id"],
-                        "\U0001f44d Comment re-enabled.",
-                    )
+            )
         finally:
             session.close()
 
-        if (
-            cmd.action == "ignore"
-            and cmd.reason
-            and is_trusted(comment.get("author_association"))
-        ):
-            await _propose_rule(code_host, payload, parent, cmd.reason)
+        reply = "\U0001f44d Ignored on this PR."
+        if cmd.reason and is_trusted(comment.get("author_association")):
+            outcome = await _propose_rule(code_host, payload, parent, cmd.reason)
+            if outcome:
+                reply += f" {outcome}"
+        await code_host.reply_to_comment(owner, repo, pr_number, comment["id"], reply)
 
         logger.info("Command %s processed for %s#%s", cmd.action, repo_full, pr_number)
     except Exception:

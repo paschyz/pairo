@@ -95,7 +95,7 @@ class RecordingProposer:
     reply: str | None = "Rule proposed in `.pairo.md`: https://x/pull/1"
     fail: bool = False
 
-    def __init__(self, *_: object) -> None:
+    def __init__(self, *_: object, **__: object) -> None:
         pass
 
     async def execute(self, **kw: Any) -> str | None:
@@ -303,9 +303,29 @@ async def test_trusted_ignore_with_reason_proposes_rule(
     assert "pairo:" not in call["finding_text"]  # hidden marker stripped
     assert call["default_branch"] == "main"
     assert (await _decision(session)).status == DecisionStatus.REJECTED
-    bodies = [b for _, b in FakeGitHub.replies]
-    assert any("Noted" in b for b in bodies)
-    assert any("Rule proposed" in b for b in bodies)
+    [(_, body)] = FakeGitHub.replies  # one reply telling the whole outcome
+    assert "Ignored on this PR." in body
+    assert "Rule proposed" in body
+
+
+async def test_jev_judges_and_default_model_writes(
+    client: AsyncClient,
+    session: Session,
+    proposer: type[RecordingProposer],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    models: list[str] = []
+    monkeypatch.setattr(webhook.settings, "llm_model_judge", "~typesafe/jev-latest")
+    monkeypatch.setattr(webhook.settings, "llm_model_default", "default-model")
+    monkeypatch.setattr(
+        webhook, "create_reviewer", lambda **kw: models.append(kw["model"])
+    )
+    await _post(
+        client,
+        "pull_request_review_comment",
+        _reply_payload("@pairo ignore on utilise pas redis", assoc="OWNER"),
+    )
+    assert models == ["~typesafe/jev-latest", "default-model"]
 
 
 async def test_default_branch_comes_from_the_payload(
@@ -333,6 +353,7 @@ async def test_untrusted_author_rejects_but_never_proposes(
     )
     assert proposer.calls == []
     assert (await _decision(session)).status == DecisionStatus.REJECTED
+    assert [b for _, b in FakeGitHub.replies] == ["\U0001f44d Ignored on this PR."]
 
 
 async def test_ignore_without_reason_never_proposes(
@@ -356,4 +377,4 @@ async def test_proposal_failure_keeps_rejection_and_ack(
         _reply_payload("@pairo ignore we use Vue", assoc="OWNER"),
     )
     assert (await _decision(session)).status == DecisionStatus.REJECTED
-    assert any("Noted" in b for _, b in FakeGitHub.replies)
+    assert [b for _, b in FakeGitHub.replies] == ["\U0001f44d Ignored on this PR."]

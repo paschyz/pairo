@@ -4,7 +4,7 @@ from typing import Any
 
 import litellm
 
-from pairo.domain.context_rule import NO_RULE, RuleProposal
+from pairo.domain.context_rule import NO_VERDICT, RuleVerdict
 from pairo.domain.finding import (
     Axis,
     Finding,
@@ -15,7 +15,12 @@ from pairo.domain.finding import (
 from pairo.domain.ports import FileDiff
 from pairo.infrastructure.llm.prompt import build_prompt
 from pairo.infrastructure.llm.rate_limiter import RateLimiter
-from pairo.infrastructure.llm.rule_classifier import build_rule_prompt, parse_proposal
+from pairo.infrastructure.llm.rule_classifier import (
+    build_judge_prompt,
+    build_write_prompt,
+    parse_rule,
+    parse_verdict,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -106,10 +111,8 @@ class LiteLLMReviewer:
             logger.exception("LiteLLM call failed for model %s", self._model)
             return []
 
-    async def classify_rule(
-        self, reason: str, finding_text: str, file: str
-    ) -> RuleProposal:
-        prompt = build_rule_prompt(reason, finding_text, file)
+    async def _json_call(self, prompt: str) -> str | None:
+        """Raw JSON answer, or None when the LLM call fails."""
         try:
             await self._rate_limiter.acquire()
             response = await litellm.acompletion(
@@ -118,7 +121,17 @@ class LiteLLMReviewer:
                 response_format={"type": "json_object"},
                 api_key=self._api_key,
             )
-            return parse_proposal(response.choices[0].message.content or "")
+            return response.choices[0].message.content or ""
         except Exception:
-            logger.exception("LiteLLM rule classification failed for %s", self._model)
-            return NO_RULE
+            logger.exception("LiteLLM rule call failed for %s", self._model)
+            return None
+
+    async def judge_rule(
+        self, reason: str, finding_text: str, file: str
+    ) -> RuleVerdict:
+        text = await self._json_call(build_judge_prompt(reason, finding_text, file))
+        return NO_VERDICT if text is None else parse_verdict(text)
+
+    async def write_rule(self, reason: str, finding_text: str, file: str) -> str:
+        text = await self._json_call(build_write_prompt(reason, finding_text, file))
+        return "" if text is None else parse_rule(text)

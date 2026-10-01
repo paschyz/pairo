@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     llm_api_key: str = ""
     llm_model_default: str = ""
     llm_model_large: str = ""
+    llm_model_judge: str = ""  # decides if an ignore reason is a .pairo.md rule
     llm_rpm_limit: int = 15
     daily_review_quota: int = 50
     dashboard_origin: str = "http://localhost:3000"

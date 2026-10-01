@@ -16,15 +16,12 @@ class TestParseCommand:
         assert cmd.action == "ignore"
         assert cmd.reason == "not relevant to our codebase"
 
-    def test_valid(self):
-        cmd = parse_command("@pairo valid")
-        assert cmd is not None
-        assert cmd.action == "valid"
-        assert cmd.reason is None
+    def test_valid_is_no_longer_a_command(self):
+        assert parse_command("@pairo valid") is None
 
     def test_case_insensitive(self):
         assert parse_command("@Pairo Ignore") is not None
-        assert parse_command("@PAIRO VALID") is not None
+        assert parse_command("@PAIRO IGNORE") is not None
 
     def test_embedded_in_text(self):
         cmd = parse_command("I disagree, @pairo ignore this is fine")
