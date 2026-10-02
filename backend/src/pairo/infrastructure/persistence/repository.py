@@ -1,5 +1,9 @@
 import asyncio
-from datetime import UTC, datetime
+from collections import Counter
+from collections.abc import Callable
+from datetime import UTC, datetime, timedelta
+from statistics import median
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -7,6 +11,9 @@ from sqlalchemy.orm import Session
 from pairo.domain.finding import Axis, Finding, Source
 from pairo.domain.review import Review
 from pairo.infrastructure.persistence.models import FindingRow, ReviewRow
+
+# (model, input_tokens, output_tokens) -> USD, or None when the model has no price
+Price = Callable[[str | None, int, int], float | None]
 
 
 class SqlReviewRepository:
@@ -133,6 +140,128 @@ class SqlReviewRepository:
             }
 
         return await asyncio.to_thread(_stats)
+
+    async def kpis(self, price: Price) -> dict[str, Any]:
+        """Usage, cost and finding breakdowns for the dashboard."""
+
+        def _kpis() -> dict[str, Any]:
+            # ponytail: every aggregate scans all reviews; window by date or
+            # add a rollup table when the reviews table gets large.
+            day = func.date(ReviewRow.created_at)
+            usage = self._session.execute(
+                select(
+                    day,
+                    ReviewRow.owner,
+                    ReviewRow.repo,
+                    ReviewRow.model,
+                    func.count(ReviewRow.id),
+                    func.sum(ReviewRow.input_tokens),
+                    func.sum(ReviewRow.output_tokens),
+                ).group_by(day, ReviewRow.owner, ReviewRow.repo, ReviewRow.model)
+            ).all()
+
+            repos: dict[str, dict[str, Any]] = {}
+            models: dict[str, dict[str, Any]] = {}
+            days: dict[str, dict[str, Any]] = {}
+            unpriced = 0
+            for date, owner, repo, model, n, input_sum, output_sum in usage:
+                input_tok, output_tok = int(input_sum or 0), int(output_sum or 0)
+                # Judge and rule-classifier calls don't record tokens, so this
+                # is the cost of review calls only.
+                cost = price(model, input_tok, output_tok)
+                if cost is None:
+                    unpriced += n
+                for bucket, name, key in (
+                    (repos, "repo", f"{owner}/{repo}"),
+                    (models, "model", model or "unknown"),
+                    (days, "date", str(date)),
+                ):
+                    agg = bucket.setdefault(key, _empty_usage(name, key))
+                    agg["reviews"] += n
+                    agg["input_tokens"] += input_tok
+                    agg["output_tokens"] += output_tok
+                    if cost is not None:
+                        agg["cost_usd"] = (agg["cost_usd"] or 0.0) + cost
+
+            by_axis: Counter[str] = Counter()
+            by_source: Counter[str] = Counter()
+            repo_findings: Counter[str] = Counter()
+            for owner, repo, axis, source, n in self._session.execute(
+                select(
+                    ReviewRow.owner,
+                    ReviewRow.repo,
+                    FindingRow.axis,
+                    FindingRow.source,
+                    func.count(FindingRow.id),
+                )
+                .join(FindingRow.review)
+                .group_by(
+                    ReviewRow.owner, ReviewRow.repo, FindingRow.axis, FindingRow.source
+                )
+            ):
+                by_axis[axis] += n
+                by_source[source] += n
+                repo_findings[f"{owner}/{repo}"] += n
+
+            repo_prs: Counter[str] = Counter()
+            delays: list[float] = []
+            for owner, repo, first_review, opened in self._session.execute(
+                select(
+                    ReviewRow.owner,
+                    ReviewRow.repo,
+                    func.min(ReviewRow.created_at),
+                    func.min(ReviewRow.pr_created_at),
+                ).group_by(ReviewRow.owner, ReviewRow.repo, ReviewRow.pr_number)
+            ):
+                repo_prs[f"{owner}/{repo}"] += 1
+                if opened is not None:
+                    delays.append((first_review - opened).total_seconds() / 60)
+
+            clean_reviews = (
+                self._session.execute(
+                    select(func.count(ReviewRow.id)).where(~ReviewRow.findings.any())
+                ).scalar()
+                or 0
+            )
+
+            for name, agg in repos.items():
+                agg["prs"] = repo_prs[name]
+                agg["findings"] = repo_findings[name]
+
+            costs = [r["cost_usd"] for r in repos.values() if r["cost_usd"] is not None]
+            today = datetime.now(tz=UTC).date()
+            last_days = (str(today - timedelta(days=i)) for i in range(13, -1, -1))
+            return {
+                "total_cost_usd": sum(costs) if costs else None,
+                "unpriced_reviews": unpriced,
+                "total_prs": sum(repo_prs.values()),
+                "clean_reviews": int(clean_reviews),
+                "median_minutes_to_first_review": (
+                    round(median(delays), 1) if delays else None
+                ),
+                "by_repo": _by_cost(repos, "repo"),
+                "by_model": _by_cost(models, "model"),
+                "by_axis": dict(by_axis),
+                "by_source": dict(by_source),
+                "daily": [days.get(d, _empty_usage("date", d)) for d in last_days],
+            }
+
+        return await asyncio.to_thread(_kpis)
+
+
+def _empty_usage(name: str, key: str) -> dict[str, Any]:
+    return {
+        name: key,
+        "reviews": 0,
+        "input_tokens": 0,
+        "output_tokens": 0,
+        "cost_usd": None,
+    }
+
+
+def _by_cost(bucket: dict[str, dict[str, Any]], name: str) -> list[dict[str, Any]]:
+    """Most expensive first; unpriced entries last, then by name."""
+    return sorted(bucket.values(), key=lambda a: (-(a["cost_usd"] or 0.0), a[name]))
 
 
 def _to_domain(row: ReviewRow) -> Review:

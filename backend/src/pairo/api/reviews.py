@@ -5,6 +5,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm import Session
 
+from pairo.infrastructure.llm.pricing import cost_usd
 from pairo.infrastructure.persistence.decision_repo import (
     SqlDecisionRepository,
 )
@@ -106,6 +107,12 @@ async def get_review(review_id: int, session: _Session) -> dict[str, object] | R
 async def stats(session: _Session) -> dict[str, int]:
     repo = SqlReviewRepository(session)
     return await repo.stats()
+
+
+@router.get("/stats/kpis")
+async def kpis(session: _Session) -> dict[str, Any]:
+    repo = SqlReviewRepository(session)
+    return await repo.kpis(cost_usd)
 
 
 @router.get("/stats/memory")
