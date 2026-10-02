@@ -157,3 +157,105 @@ async def test_list_is_one_row_per_pr_with_utc_timestamps(
 
     detail = (await client.get(f"/api/reviews/{rows[0]['id']}")).json()
     assert [h["head_sha"] for h in detail["history"]] == ["b2", "a1"]
+
+
+def _flat_price(
+    model: str | None, input_tokens: int, output_tokens: int
+) -> float | None:
+    """$1 per input token, $2 per output token; "mystery" has no known price."""
+    if model == "mystery":
+        return None
+    return input_tokens + 2.0 * output_tokens
+
+
+@pytest.fixture
+def _priced(monkeypatch: pytest.MonkeyPatch) -> None:
+    import pairo.api.reviews as api
+
+    monkeypatch.setattr(api, "cost_usd", _flat_price)
+
+
+async def test_kpis_empty(client: AsyncClient, _priced: None) -> None:
+    resp = await client.get("/api/stats/kpis")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["total_cost_usd"] is None
+    assert data["unpriced_reviews"] == 0
+    assert data["total_prs"] == 0
+    assert data["clean_reviews"] == 0
+    assert data["median_minutes_to_first_review"] is None
+    assert data["by_repo"] == []
+    assert data["by_model"] == []
+    assert data["by_axis"] == {}
+    assert data["by_source"] == {}
+    assert len(data["daily"]) == 14
+    assert all(d["reviews"] == 0 for d in data["daily"])
+
+
+async def test_kpis_breakdowns(
+    client: AsyncClient, _db: SqlReviewRepository, _priced: None
+) -> None:
+    from datetime import UTC, datetime
+
+    await _db.save(_review("d-1", n_findings=2, pr_number=1))
+    await _db.save(_review("d-2", n_findings=0, pr_number=1))
+    unpriced = _review("d-3", n_findings=1, pr_number=1)
+    unpriced.repo = "api"
+    unpriced.model = "mystery"
+    await _db.save(unpriced)
+
+    data = (await client.get("/api/stats/kpis")).json()
+
+    assert data["total_cost_usd"] == 400.0
+    assert data["unpriced_reviews"] == 1
+    assert data["total_prs"] == 2
+    assert data["clean_reviews"] == 1
+    assert data["by_repo"] == [
+        {
+            "repo": "acme/web",
+            "reviews": 2,
+            "prs": 1,
+            "findings": 2,
+            "input_tokens": 200,
+            "output_tokens": 100,
+            "cost_usd": 400.0,
+        },
+        {
+            "repo": "acme/api",
+            "reviews": 1,
+            "prs": 1,
+            "findings": 1,
+            "input_tokens": 100,
+            "output_tokens": 50,
+            "cost_usd": None,
+        },
+    ]
+    assert [(m["model"], m["reviews"], m["cost_usd"]) for m in data["by_model"]] == [
+        ("gemini-3.6-flash", 2, 400.0),
+        ("mystery", 1, None),
+    ]
+    assert data["by_axis"] == {"eco": 3}
+    assert data["by_source"] == {"llm": 3}
+
+    today = data["daily"][-1]
+    assert today["date"] == str(datetime.now(tz=UTC).date())
+    assert today["reviews"] == 3
+    assert today["cost_usd"] == 400.0
+    assert sum(d["reviews"] for d in data["daily"][:-1]) == 0
+
+
+async def test_kpis_median_time_to_first_review(
+    client: AsyncClient, _db: SqlReviewRepository, _priced: None
+) -> None:
+    from datetime import UTC, datetime, timedelta
+
+    now = datetime.now(tz=UTC).replace(tzinfo=None)
+    for pr_number, minutes in ((1, 10), (2, 30)):
+        review = _review(f"d-{pr_number}", pr_number=pr_number)
+        review.pr_created_at = now - timedelta(minutes=minutes)
+        await _db.save(review)
+    await _db.save(_review("d-3", pr_number=3))  # no PR creation date: ignored
+
+    data = (await client.get("/api/stats/kpis")).json()
+
+    assert data["median_minutes_to_first_review"] == pytest.approx(20, abs=1)

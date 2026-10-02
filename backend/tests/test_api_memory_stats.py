@@ -87,3 +87,17 @@ async def test_memory_stats_with_decisions(
     assert data["by_signal"]["reaction"] == 1
     assert data["by_category"]["naming"] == 2
     assert data["by_category"]["complexity"] == 1
+
+
+async def test_memory_stats_counts_every_status(
+    client: AsyncClient, _db: SqlDecisionRepository
+) -> None:
+    await _db.save(_decision("fp1"))
+    await _db.save(_decision("fp2", status=DecisionStatus.ACCEPTED))
+    await _db.save(_decision("fp3", status=DecisionStatus.ACCEPTED))
+    await _db.save(_decision("fp4", status=DecisionStatus.POSTED))
+
+    data = (await client.get("/api/stats/memory")).json()
+
+    assert data["by_status"] == {"rejected": 1, "accepted": 2, "posted": 1}
+    assert data["total_rejected"] == 1

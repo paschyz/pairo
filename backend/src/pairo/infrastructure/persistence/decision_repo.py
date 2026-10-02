@@ -4,7 +4,7 @@ import asyncio
 from collections import Counter
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from pairo.domain.decision import (
@@ -105,10 +105,16 @@ class SqlDecisionRepository:
                 if row.signal:
                     by_signal[row.signal] += 1
                 by_category[row.category] += 1
+            by_status = self._session.execute(
+                select(FindingDecisionRow.status, func.count()).group_by(
+                    FindingDecisionRow.status
+                )
+            ).all()
             return {
                 "total_rejected": len(rows),
                 "by_signal": dict(by_signal),
                 "by_category": dict(by_category),
+                "by_status": {status: n for status, n in by_status},
             }
 
         return await asyncio.to_thread(_stats)
