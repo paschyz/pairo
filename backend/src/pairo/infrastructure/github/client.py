@@ -16,6 +16,9 @@ from pairo.domain.review import Review
 logger = logging.getLogger(__name__)
 
 GITHUB_API = "https://api.github.com"
+_TIMEOUT_S = 15
+_PER_PAGE = 100
+_MAX_FILE_PAGES = 30  # GitHub lists at most 3000 files for a PR
 
 _SKIP_EXTENSIONS = (".lock", ".min.js", ".min.css")
 _SKIP_FILENAMES = {"package-lock.json", "yarn.lock", "pnpm-lock.yaml"}
@@ -74,7 +77,8 @@ def render_review_comment(finding: Finding) -> dict[str, Any]:
 
 def _format_review_body(review: Review) -> str:
     if not review.findings:
-        return "✅ Nothing to report."
+        # A partial review must never read as an all-clear.
+        return review.notice or "✅ Nothing to report."
 
     lines = ["**Pairo summary**\n"]
     counts = review.counts_by_axis()
@@ -86,6 +90,8 @@ def _format_review_body(review: Review) -> str:
         lines.append(f"🌍 Estimated CO₂ : {review.co2_g:.4f} g")
     if review.memory_summary:
         lines.append(f"\n🧠 {review.memory_summary}")
+    if review.notice:
+        lines.append(f"\n{review.notice}")
 
     return "\n".join(lines)
 
@@ -98,22 +104,37 @@ class GitHubClient:
             "Accept": "application/vnd.github+json",
         }
 
+    def _client(self) -> httpx.AsyncClient:
+        # Explicit timeout, and connection errors are retried: one blip on
+        # GitHub's side must not lose a whole review.
+        return httpx.AsyncClient(
+            timeout=_TIMEOUT_S, transport=httpx.AsyncHTTPTransport(retries=2)
+        )
+
     async def get_pull_request_files(
         self, owner: str, repo: str, pr_number: int
     ) -> list[FileDiff]:
-        async with httpx.AsyncClient() as client:
-            resp = await client.get(
-                f"{GITHUB_API}/repos/{owner}/{repo}/pulls/{pr_number}/files",
-                headers=self._headers,
-            )
-            resp.raise_for_status()
-        raw_files: list[dict[str, Any]] = resp.json()
+        # GitHub returns 30 files per page by default: follow the pages, or a
+        # large PR is silently reviewed on its first 30 files only.
+        raw_files: list[dict[str, Any]] = []
+        async with self._client() as client:
+            for page in range(1, _MAX_FILE_PAGES + 1):
+                resp = await client.get(
+                    f"{GITHUB_API}/repos/{owner}/{repo}/pulls/{pr_number}/files",
+                    params={"per_page": _PER_PAGE, "page": page},
+                    headers=self._headers,
+                )
+                resp.raise_for_status()
+                batch: list[dict[str, Any]] = resp.json()
+                raw_files.extend(batch)
+                if len(batch) < _PER_PAGE:
+                    break
         return [f for raw in raw_files if (f := _parse_file(raw)) is not None]
 
     async def get_compare_files(
         self, owner: str, repo: str, base: str, head: str
     ) -> list[FileDiff]:
-        async with httpx.AsyncClient() as client:
+        async with self._client() as client:
             resp = await client.get(
                 f"{GITHUB_API}/repos/{owner}/{repo}/compare/{base}...{head}",
                 headers=self._headers,
@@ -124,7 +145,7 @@ class GitHubClient:
         return [f for raw in raw_files if (f := _parse_file(raw)) is not None]
 
     async def get_file_size_kb(self, owner: str, repo: str, path: str, ref: str) -> int:
-        async with httpx.AsyncClient() as client:
+        async with self._client() as client:
             resp = await client.get(
                 f"{GITHUB_API}/repos/{owner}/{repo}/contents/{path}",
                 params={"ref": ref},
@@ -137,7 +158,7 @@ class GitHubClient:
     async def get_repo_file(
         self, owner: str, repo: str, path: str, ref: str
     ) -> str | None:
-        async with httpx.AsyncClient() as client:
+        async with self._client() as client:
             resp = await client.get(
                 f"{GITHUB_API}/repos/{owner}/{repo}/contents/{path}",
                 params={"ref": ref},
@@ -166,7 +187,7 @@ class GitHubClient:
         # delete-branch-on-merge (or recreate from default when no PR is open).
         base = f"{GITHUB_API}/repos/{owner}/{repo}"
         h = self._headers
-        async with httpx.AsyncClient() as client:
+        async with self._client() as client:
             ref = await client.get(f"{base}/git/ref/heads/{branch}", headers=h)
             if ref.status_code == 404:
                 src = await client.get(
@@ -248,7 +269,7 @@ class GitHubClient:
 
         url = f"{GITHUB_API}/repos/{owner}/{repo}/pulls/{pr_number}/reviews"
         n_sugg = sum(1 for f in review.findings if f.code_suggestion)
-        async with httpx.AsyncClient() as client:
+        async with self._client() as client:
             resp = await client.post(url, headers=self._headers, json=payload)
             if resp.status_code == 422 and n_sugg:
                 # A bad suggestion range must not sink the whole review:
@@ -273,7 +294,7 @@ class GitHubClient:
     async def get_comment(
         self, owner: str, repo: str, comment_id: int
     ) -> dict[str, Any]:
-        async with httpx.AsyncClient() as client:
+        async with self._client() as client:
             resp = await client.get(
                 f"{GITHUB_API}/repos/{owner}/{repo}/pulls/comments/{comment_id}",
                 headers=self._headers,
@@ -284,7 +305,7 @@ class GitHubClient:
     async def reply_to_comment(
         self, owner: str, repo: str, pr_number: int, comment_id: int, body: str
     ) -> None:
-        async with httpx.AsyncClient() as client:
+        async with self._client() as client:
             resp = await client.post(
                 f"{GITHUB_API}/repos/{owner}/{repo}/pulls/{pr_number}/comments",
                 headers=self._headers,
@@ -295,7 +316,7 @@ class GitHubClient:
     async def get_comment_reactions(
         self, owner: str, repo: str, comment_id: int
     ) -> list[str]:
-        async with httpx.AsyncClient() as client:
+        async with self._client() as client:
             resp = await client.get(
                 f"{GITHUB_API}/repos/{owner}/{repo}/pulls/comments/{comment_id}/reactions",
                 headers={**self._headers, "Accept": "application/vnd.github+json"},
@@ -315,7 +336,7 @@ class GitHubClient:
                 nodes {
                   isResolved
                   comments(first: 1) {
-                    nodes { id databaseId body }
+                    nodes { id databaseId body author { __typename } }
                   }
                 }
                 pageInfo { hasNextPage endCursor }
@@ -327,7 +348,7 @@ class GitHubClient:
         threads: list[dict[str, Any]] = []
         cursor: str | None = None
 
-        async with httpx.AsyncClient() as client:
+        async with self._client() as client:
             while True:
                 resp = await client.post(
                     "https://api.github.com/graphql",
@@ -353,7 +374,9 @@ class GitHubClient:
                         if node["comments"]["nodes"]
                         else None
                     )
-                    if first:
+                    # Only a bot's comment carries a marker we trust: anyone can
+                    # paste a look-alike marker in a comment of their own.
+                    if first and (first.get("author") or {}).get("__typename") == "Bot":
                         threads.append(
                             {
                                 "is_resolved": node["isResolved"],

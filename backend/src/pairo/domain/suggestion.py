@@ -20,6 +20,21 @@ def _is_valid(finding: Finding, added: dict[str, set[int]]) -> bool:
     return set(range(finding.line, end + 1)) <= added.get(finding.file, set())
 
 
+def anchor_findings(findings: list[Finding], files: list[FileDiff]) -> list[Finding]:
+    """Turn findings that point outside the added lines into general comments.
+
+    GitHub rejects a whole review (422) when one inline comment targets a line
+    that is not in the diff, so a single hallucinated line would lose everything.
+    """
+    added = {f.path: {a.number for a in f.added_lines} for f in files}
+    return [
+        f
+        if f.line is None or f.line in added.get(f.file, set())
+        else replace(f, line=None, code_suggestion=None)
+        for f in findings
+    ]
+
+
 def sanitize_suggestions(
     findings: list[Finding], files: list[FileDiff]
 ) -> tuple[list[Finding], int]:

@@ -138,6 +138,9 @@ context:
   propose_rules: true         # Open PRs adding rules to .pairo.md (default: true)
 ```
 
+Like `.pairo.md`, the file is read from the PR's base branch: a change applies once
+merged, and a PR cannot switch off its own review.
+
 ### `.pairo.md` (project context)
 
 When a repo owner, member or collaborator replies `@pairo ignore <reason>` to a Pairo

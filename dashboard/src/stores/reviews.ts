@@ -88,12 +88,26 @@ export const useReviewStore = defineStore('reviews', () => {
     daily: [],
   })
   const loading = ref(false)
+  const error = ref<string | null>(null)
+
+  // A sleeping or failing backend must show a message, not a blank or broken page:
+  // on failure the previous state is kept and `error` is set (shown by App.vue).
+  async function getJson<T>(url: string): Promise<T | null> {
+    try {
+      const res = await fetch(url)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      return (await res.json()) as T
+    } catch {
+      error.value = 'Could not load data from the Pairo API. Try again in a moment.'
+      return null
+    }
+  }
 
   async function fetchReviews(offset = 0, limit = 20) {
     loading.value = true
     try {
-      const res = await fetch(`/api/reviews?offset=${offset}&limit=${limit}`)
-      reviews.value = await res.json()
+      const data = await getJson<ReviewSummary[]>(`/api/reviews?offset=${offset}&limit=${limit}`)
+      if (data) reviews.value = data
     } finally {
       loading.value = false
     }
@@ -102,29 +116,27 @@ export const useReviewStore = defineStore('reviews', () => {
   async function fetchReview(id: number) {
     loading.value = true
     try {
-      const res = await fetch(`/api/reviews/${id}`)
-      if (res.ok) {
-        current.value = await res.json()
-      }
+      const data = await getJson<ReviewDetail>(`/api/reviews/${id}`)
+      if (data) current.value = data
     } finally {
       loading.value = false
     }
   }
 
   async function fetchStats() {
-    const res = await fetch('/api/stats')
-    stats.value = await res.json()
+    const data = await getJson<Stats>('/api/stats')
+    if (data) stats.value = data
   }
 
   async function fetchMemoryStats() {
-    const res = await fetch('/api/stats/memory')
-    memory.value = await res.json()
+    const data = await getJson<MemoryStats>('/api/stats/memory')
+    if (data) memory.value = data
   }
 
   async function fetchKpis() {
-    const res = await fetch('/api/stats/kpis')
-    kpis.value = await res.json()
+    const data = await getJson<Kpis>('/api/stats/kpis')
+    if (data) kpis.value = data
   }
 
-  return { reviews, current, stats, memory, kpis, loading, fetchReviews, fetchReview, fetchStats, fetchMemoryStats, fetchKpis }
+  return { reviews, current, stats, memory, kpis, loading, error, fetchReviews, fetchReview, fetchStats, fetchMemoryStats, fetchKpis }
 })

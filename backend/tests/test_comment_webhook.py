@@ -15,12 +15,15 @@ def _sign(payload: bytes) -> str:
 
 
 def _headers(
-    payload: bytes, *, event: str = "pull_request_review_comment"
+    payload: bytes,
+    *,
+    event: str = "pull_request_review_comment",
+    delivery_id: str = "comment-delivery-1",
 ) -> dict[str, str]:
     return {
         "X-Hub-Signature-256": _sign(payload),
         "X-GitHub-Event": event,
-        "X-GitHub-Delivery": "comment-delivery-1",
+        "X-GitHub-Delivery": delivery_id,
         "Content-Type": "application/json",
     }
 
@@ -50,6 +53,16 @@ async def test_comment_webhook_accepts_pairo_command(client: AsyncClient) -> Non
     resp = await client.post("/webhook", content=body, headers=_headers(body))
     assert resp.status_code == 202
     assert "command" in resp.json()["detail"].lower()
+
+
+async def test_comment_webhook_redelivery_is_not_processed_twice(
+    client: AsyncClient,
+) -> None:
+    body = json.dumps(COMMENT_PAYLOAD).encode()
+    await client.post("/webhook", content=body, headers=_headers(body))
+    resp = await client.post("/webhook", content=body, headers=_headers(body))
+    assert resp.status_code == 200
+    assert "already" in resp.json()["detail"].lower()
 
 
 async def test_comment_webhook_ignores_non_command(client: AsyncClient) -> None:

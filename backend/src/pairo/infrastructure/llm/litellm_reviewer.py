@@ -25,6 +25,9 @@ from pairo.infrastructure.llm.rule_classifier import (
 logger = logging.getLogger(__name__)
 
 _VALID_AXES = {a.value for a in Axis}
+# Bound the call: a hung provider must not hold a review (and the limiter) for long.
+_TIMEOUT_S = 60
+_RETRIES = 2
 
 
 def _load_json(text: str) -> Any:
@@ -40,11 +43,12 @@ def _load_json(text: str) -> Any:
 
 
 def _parse_findings(text: str) -> list[Finding]:
+    """Raises on unreadable output: that is a failed review, not a clean one."""
     try:
         raw = _load_json(text)
     except json.JSONDecodeError:
         logger.warning("LLM returned invalid JSON: %s", text[:200])
-        return []
+        raise
     if isinstance(raw, dict):
         raw = raw.get("findings", [])
     if not isinstance(raw, list):
@@ -94,34 +98,30 @@ class LiteLLMReviewer:
         language: str,
         project_context: str = "",
     ) -> list[Finding]:
+        """Raises when the call or its output fails, so the caller can say so
+        on the PR instead of posting an empty review that reads as "all clear"."""
         prompt = build_prompt(files, existing_findings, axes, language, project_context)
-        try:
-            await self._rate_limiter.acquire()
-            response = await litellm.acompletion(
-                model=self._model,
-                messages=[{"role": "user", "content": prompt}],
-                response_format={"type": "json_object"},
-                api_key=self._api_key,
-            )
-            usage = response.usage
-            self.last_input_tokens = usage.prompt_tokens or 0 if usage else 0
-            self.last_output_tokens = usage.completion_tokens or 0 if usage else 0
-            text = response.choices[0].message.content or ""
-            return _parse_findings(text)
-        except Exception:
-            logger.exception("LiteLLM call failed for model %s", self._model)
-            return []
+        response = await self._complete(prompt)
+        usage = response.usage
+        self.last_input_tokens = usage.prompt_tokens or 0 if usage else 0
+        self.last_output_tokens = usage.completion_tokens or 0 if usage else 0
+        return _parse_findings(response.choices[0].message.content or "")
+
+    async def _complete(self, prompt: str) -> Any:
+        await self._rate_limiter.acquire()
+        return await litellm.acompletion(
+            model=self._model,
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"},
+            api_key=self._api_key,
+            timeout=_TIMEOUT_S,
+            num_retries=_RETRIES,
+        )
 
     async def _json_call(self, prompt: str) -> str | None:
         """Raw JSON answer, or None when the LLM call fails."""
         try:
-            await self._rate_limiter.acquire()
-            response = await litellm.acompletion(
-                model=self._model,
-                messages=[{"role": "user", "content": prompt}],
-                response_format={"type": "json_object"},
-                api_key=self._api_key,
-            )
+            response = await self._complete(prompt)
             return response.choices[0].message.content or ""
         except Exception:
             logger.exception("LiteLLM rule call failed for %s", self._model)

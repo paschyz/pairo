@@ -1,4 +1,7 @@
-from pairo.application.review_pull_request import ReviewPullRequest
+from pairo.application.review_pull_request import (
+    MAX_LLM_ADDED_LINES,
+    ReviewPullRequest,
+)
 from pairo.domain.context_rule import MAX_FILE_CHARS
 from pairo.domain.diff import AddedLine
 from pairo.domain.finding import Axis, Finding, Source
@@ -312,9 +315,69 @@ async def test_invalid_code_suggestion_stripped_but_finding_kept() -> None:
     await uc.execute(owner="o", repo="r", pr_number=1, head_sha="abc", action="opened")
 
     assert code_host.posted_review is not None
-    by_line = {f.line: f for f in code_host.posted_review.findings}
-    assert by_line[99].code_suggestion is None
-    assert by_line[1].code_suggestion == CodeSuggestion("y = 2")
+    by_issue = {f.issue: f for f in code_host.posted_review.findings}
+    # Line 99 is not in the diff: kept, but as a general comment GitHub accepts.
+    assert (by_issue["t"].line, by_issue["t"].code_suggestion) == (None, None)
+    assert by_issue["u"].code_suggestion == CodeSuggestion("y = 2")
+
+
+async def test_llm_failure_posts_a_notice_not_an_all_clear() -> None:
+    class BrokenLLM(FakeLLM):
+        async def review(self, *_: object, **__: object) -> list[Finding]:
+            raise RuntimeError("provider down")
+
+    code_host = FakeCodeHost(_img_file())
+    await _review_with(code_host, BrokenLLM())
+
+    review = code_host.posted_review
+    assert review is not None
+    assert "AI review unavailable" in review.notice
+    assert len(_a11y(code_host)) == 1  # built-in checks still reported
+
+
+async def test_quota_exhausted_posts_a_notice() -> None:
+    code_host = FakeCodeHost(_one_file())
+    await _review_with(
+        code_host,
+        FakeLLM(),
+        review_repo=FakeReviewRepo(today_count=50),
+        daily_quota=50,
+    )
+    assert code_host.posted_review is not None
+    assert "quota" in code_host.posted_review.notice
+
+
+async def test_large_diff_is_capped_before_the_llm() -> None:
+    class RecordingLLM(FakeLLM):
+        seen = 0
+
+        async def review(self, files: list[FileDiff], *a: object, **k: object):  # type: ignore[no-untyped-def,override]
+            self.seen = sum(len(f.added_lines) for f in files)
+            return []
+
+    big = [AddedLine(i, "x = 1") for i in range(1, MAX_LLM_ADDED_LINES + 1)]
+    files = [FileDiff("a.py", big), FileDiff("b.py", [AddedLine(1, "y = 2")])]
+    code_host = FakeCodeHost(files)
+    llm = RecordingLLM()
+    await _review_with(code_host, llm)
+
+    assert llm.seen == MAX_LLM_ADDED_LINES
+    assert code_host.posted_review is not None
+    assert "Large diff" in code_host.posted_review.notice
+
+
+async def test_clean_review_has_no_notice() -> None:
+    code_host = FakeCodeHost(_one_file())
+    await _review_with(code_host, FakeLLM())
+    assert code_host.posted_review is not None
+    assert code_host.posted_review.notice == ""
+
+
+async def test_pairo_yml_comes_from_the_base_branch() -> None:
+    """A PR must not be able to switch off its own review."""
+    code_host = FakeCodeHost(_one_file())
+    await _review_with(code_host, FakeLLM())
+    assert (".pairo.yml", "main") in code_host.fetched
 
 
 async def test_resolved_thread_suppresses_finding_without_command() -> None:

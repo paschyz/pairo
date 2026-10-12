@@ -4,6 +4,7 @@ Only GitHub's API is faked; signature check, routing, background handlers, the
 marker round-trip and the real SqlDecisionRepository are all exercised.
 """
 
+import itertools
 import json
 from typing import Any
 
@@ -47,12 +48,17 @@ class FakeGitHub:
 
     comments: dict[int, str] = {}
     replies: list[tuple[int, str]] = []
+    comment_author_type = "Bot"
 
     def __init__(self, token: str) -> None:
         pass
 
     async def get_comment(self, owner: str, repo: str, cid: int) -> dict[str, Any]:
-        return {"id": cid, "body": self.comments[cid]}
+        return {
+            "id": cid,
+            "body": self.comments[cid],
+            "user": {"type": self.comment_author_type},
+        }
 
     async def reply_to_comment(
         self, owner: str, repo: str, pr: int, cid: int, body: str
@@ -87,6 +93,7 @@ def session(monkeypatch: pytest.MonkeyPatch) -> Session:
     monkeypatch.setattr(webhook, "_load_private_key", lambda: "key")
     FakeGitHub.comments = {PAIRO_COMMENT_ID: PAIRO_BODY}
     FakeGitHub.replies = []
+    FakeGitHub.comment_author_type = "Bot"
     return factory()
 
 
@@ -113,11 +120,13 @@ def proposer(monkeypatch: pytest.MonkeyPatch) -> type[RecordingProposer]:
     return RecordingProposer
 
 
+_deliveries = itertools.count()
+
+
 async def _post(client: AsyncClient, event: str, payload: dict[str, Any]) -> int:
     body = json.dumps(payload).encode()
-    resp = await client.post(
-        "/webhook", content=body, headers=_headers(body, event=event)
-    )
+    headers = _headers(body, event=event, delivery_id=f"d-{next(_deliveries)}")
+    resp = await client.post("/webhook", content=body, headers=headers)
     return resp.status_code
 
 
@@ -126,6 +135,7 @@ def _reply_payload(
     parent: int = PAIRO_COMMENT_ID,
     assoc: str | None = None,
     default_branch: str | None = None,
+    pr_author: str = "alice",
 ) -> dict[str, Any]:
     repository: dict[str, Any] = {"full_name": REPO}
     if default_branch:
@@ -139,16 +149,19 @@ def _reply_payload(
             "in_reply_to_id": parent,
             "author_association": assoc,
         },
-        "pull_request": {"number": PR},
+        "pull_request": {"number": PR, "user": {"login": pr_author}},
         "repository": repository,
         "installation": {"id": 1},
     }
 
 
-def _thread_payload(action: str, body: str = PAIRO_BODY) -> dict[str, Any]:
+def _thread_payload(
+    action: str, body: str = PAIRO_BODY, author_type: str = "Bot"
+) -> dict[str, Any]:
+    first = {"id": PAIRO_COMMENT_ID, "body": body, "user": {"type": author_type}}
     return {
         "action": action,
-        "thread": {"comments": [{"id": PAIRO_COMMENT_ID, "body": body}]},
+        "thread": {"comments": [first]},
         "pull_request": {"number": PR},
         "repository": {"full_name": REPO},
         "sender": {"login": "alice"},
@@ -232,6 +245,45 @@ async def test_non_pairo_comment_is_not_recorded(
         client, "pull_request_review_thread", _thread_payload("resolved", body="human")
     )
     assert await SqlDecisionRepository(session).get_decisions(REPO, PR) == []
+
+
+async def test_forged_marker_in_a_human_comment_is_not_recorded(
+    client: AsyncClient, session: Session
+) -> None:
+    """Only comments written by the bot carry a marker we trust."""
+    FakeGitHub.comment_author_type = "User"
+    await _post(client, "pull_request_review_comment", _reply_payload("@pairo ignore"))
+    await _post(
+        client,
+        "pull_request_review_thread",
+        _thread_payload("resolved", author_type="User"),
+    )
+    assert await SqlDecisionRepository(session).get_decisions(REPO, PR) == []
+    assert FakeGitHub.replies == []
+
+
+async def test_stranger_cannot_dismiss_a_finding(
+    client: AsyncClient, session: Session
+) -> None:
+    """Neither a maintainer nor the PR author: the command is ignored."""
+    await _post(
+        client,
+        "pull_request_review_comment",
+        _reply_payload("@pairo ignore", assoc="NONE", pr_author="bob"),
+    )
+    assert await SqlDecisionRepository(session).get_decisions(REPO, PR) == []
+    assert FakeGitHub.replies == []
+
+
+async def test_maintainer_can_dismiss_on_someone_elses_pr(
+    client: AsyncClient, session: Session
+) -> None:
+    await _post(
+        client,
+        "pull_request_review_comment",
+        _reply_payload("@pairo ignore", assoc="MEMBER", pr_author="bob"),
+    )
+    assert (await _decision(session)).status == DecisionStatus.REJECTED
 
 
 async def test_resolved_finding_is_not_reposted_on_next_review(
@@ -343,7 +395,7 @@ async def test_default_branch_comes_from_the_payload(
 
 
 @pytest.mark.parametrize("assoc", ["CONTRIBUTOR", "NONE", None])
-async def test_untrusted_author_rejects_but_never_proposes(
+async def test_untrusted_pr_author_rejects_but_never_proposes(
     client: AsyncClient,
     session: Session,
     proposer: type[RecordingProposer],

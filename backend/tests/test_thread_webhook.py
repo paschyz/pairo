@@ -18,12 +18,16 @@ from tests.test_comment_webhook import _headers
 FP = "abc123def4567890"
 
 
-def _payload(action: str, body: str | None = None) -> dict:
+def _payload(action: str, body: str | None = None, author_type: str = "Bot") -> dict:
     return {
         "action": action,
         "thread": {
             "comments": [
-                {"id": 7, "body": body or f"x\n\n{build_marker(FP, 'crafts', '')}"}
+                {
+                    "id": 7,
+                    "body": body or f"x\n\n{build_marker(FP, 'crafts', '')}",
+                    "user": {"type": author_type},
+                }
             ]
         },
         "pull_request": {"number": 42},
@@ -77,6 +81,11 @@ async def test_resolve_rejects_then_unresolve_reopens(session: Session) -> None:
     await webhook._handle_thread(_payload("unresolved"))
     d = await repo.get_by_fingerprint("acme/web", 42, FP)
     assert d and d.status == DecisionStatus.POSTED
+
+
+async def test_marker_forged_by_a_human_is_ignored(session: Session) -> None:
+    await webhook._handle_thread(_payload("resolved", author_type="User"))
+    assert await SqlDecisionRepository(session).get_decisions("acme/web", 42) == []
 
 
 async def test_non_pairo_thread_is_ignored(session: Session) -> None:

@@ -84,6 +84,13 @@ async def test_webhook_ignores_irrelevant_action(client: AsyncClient) -> None:
     assert "ignored" in resp.json()["detail"].lower()
 
 
+async def test_webhook_reviews_a_draft_marked_ready(client: AsyncClient) -> None:
+    payload = {**PR_OPENED_PAYLOAD, "action": "ready_for_review"}
+    body = json.dumps(payload).encode()
+    resp = await client.post("/webhook", content=body, headers=_headers(body))
+    assert resp.status_code == 202
+
+
 async def test_webhook_ignores_draft_pr(client: AsyncClient) -> None:
     payload = json.loads(json.dumps(PR_OPENED_PAYLOAD))
     payload["pull_request"]["draft"] = True

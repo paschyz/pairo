@@ -22,6 +22,8 @@ class Review:
     pr_created_at: datetime | None = None
     memory_filtered: int = 0
     memory_summary: str = ""
+    # Why the review is partial (LLM down, quota, capped diff); shown on the PR.
+    notice: str = ""
 
     def counts_by_axis(self) -> dict[Axis, int]:
         if not self.findings:
