@@ -129,6 +129,43 @@ async def test_run_review_posts_findings() -> None:
 
 
 @respx.mock
+async def test_same_diff_is_served_from_the_cache(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Two deliveries, one unchanged diff: the LLM is called (and paid) once."""
+    from pairo.api import webhook
+
+    class CountingLLM:
+        model_name = "m"
+        last_input_tokens = 0
+        last_output_tokens = 0
+        calls = 0
+
+        async def review(self, *_: object, **__: object) -> list[object]:
+            CountingLLM.calls += 1
+            return []
+
+    monkeypatch.setattr(webhook, "_make_llm", CountingLLM)
+    review_route = _mock_github_api()
+    await webhook._run_review(_pr_payload(), "cache-1")
+    await webhook._run_review(_pr_payload(), "cache-2")
+
+    assert review_route.call_count == 2
+    assert CountingLLM.calls == 1
+
+
+@respx.mock
+async def test_redelivery_after_a_restart_is_not_reviewed_twice() -> None:
+    """The in-memory set is gone after a restart: the saved review is the guard."""
+    from pairo.api.webhook import _run_review
+
+    review_route = _mock_github_api()
+    await _run_review(_pr_payload(), "e2e-delivery-1")
+    await _run_review(_pr_payload(), "e2e-delivery-1")
+    assert review_route.call_count == 1
+
+
+@respx.mock
 async def test_webhook_to_review(client: httpx.AsyncClient) -> None:
     """Full path: webhook POST → background task → review posted."""
     review_route = _mock_github_api()

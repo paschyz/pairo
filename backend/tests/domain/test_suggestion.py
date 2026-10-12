@@ -3,7 +3,7 @@ from dataclasses import replace
 from pairo.domain.diff import AddedLine
 from pairo.domain.finding import Axis, CodeSuggestion, Finding, Source
 from pairo.domain.ports import FileDiff
-from pairo.domain.suggestion import sanitize_suggestions
+from pairo.domain.suggestion import anchor_findings, sanitize_suggestions
 
 FILES = [
     FileDiff(
@@ -11,6 +11,24 @@ FILES = [
         [AddedLine(10, "x"), AddedLine(11, "y"), AddedLine(13, "z")],
     )
 ]
+
+
+def test_anchor_keeps_findings_on_added_lines() -> None:
+    f = _finding(10, None)
+    assert anchor_findings([f], FILES) == [f]
+
+
+def test_anchor_demotes_line_outside_the_diff_to_general_comment() -> None:
+    off_line = _finding(12, CodeSuggestion("x"))
+    off_file = _finding(10, None, file="ghost.py")
+    a, b = anchor_findings([off_line, off_file], FILES)
+    assert (a.line, a.code_suggestion) == (None, None)
+    assert b.line is None
+
+
+def test_anchor_leaves_general_findings_alone() -> None:
+    f = _finding(None, None)
+    assert anchor_findings([f], FILES) == [f]
 
 
 def _finding(line: int | None, suggestion: CodeSuggestion | None, file: str = "a.py"):

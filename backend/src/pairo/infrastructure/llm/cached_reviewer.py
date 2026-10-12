@@ -62,8 +62,9 @@ class CachedLLMReviewer:
         key = compute_cache_key(
             files_content=files_content,
             axes=axes,
-            # A .pairo.md change must not serve reviews cached under the old rules.
-            config_hash=self._config_hash + project_context,
+            # A .pairo.md or language change must not serve reviews cached under
+            # the old settings.
+            config_hash=f"{self._config_hash}|{language}|{project_context}",
             prompt_version=self._prompt_version,
             model=self._model,
         )

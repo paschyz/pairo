@@ -136,7 +136,7 @@ onMounted(() => {
               </svg>
             </a>
           </div>
-          <a href="#" class="btn-secondary">
+          <a href="/pairo-showreel-1080p.mp4" target="_blank" rel="noopener" class="btn-secondary">
             <svg
               class="play-icon"
               width="14"

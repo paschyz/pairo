@@ -2,7 +2,7 @@ from collections.abc import Iterator
 from datetime import UTC, datetime
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Path, Query, Response
 from sqlalchemy.orm import Session
 
 from pairo.infrastructure.llm.pricing import cost_usd
@@ -13,6 +13,10 @@ from pairo.infrastructure.persistence.engine import get_session
 from pairo.infrastructure.persistence.repository import SqlReviewRepository
 
 router = APIRouter(prefix="/api")
+
+# Out-of-range values would otherwise reach the database as a 500 or a full scan.
+_MAX_PAGE_SIZE = 100
+_MAX_ID = 2**31 - 1  # the id column is a 32-bit integer
 
 
 def _session() -> Iterator[Session]:
@@ -33,7 +37,9 @@ def _iso(dt: datetime | None) -> str | None:
 
 @router.get("/reviews")
 async def list_reviews(
-    session: _Session, offset: int = 0, limit: int = 20
+    session: _Session,
+    offset: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=_MAX_PAGE_SIZE)] = 20,
 ) -> list[dict[str, object]]:
     repo = SqlReviewRepository(session)
     reviews = await repo.list_reviews(offset=offset, limit=limit)
@@ -57,7 +63,9 @@ async def list_reviews(
 
 
 @router.get("/reviews/{review_id}", response_model=None)
-async def get_review(review_id: int, session: _Session) -> dict[str, object] | Response:
+async def get_review(
+    review_id: Annotated[int, Path(ge=1, le=_MAX_ID)], session: _Session
+) -> dict[str, object] | Response:
     repo = SqlReviewRepository(session)
     r = await repo.get(review_id)
     if r is None:

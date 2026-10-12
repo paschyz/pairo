@@ -1,8 +1,17 @@
 <script setup lang="ts">
+import { watch } from 'vue'
 import { useRoute } from 'vue-router'
 import logo from '@/assets/pairo.png'
+import { useReviewStore } from '@/stores/reviews'
 
 const route = useRoute()
+const store = useReviewStore()
+
+// Each page reloads its data: drop the previous page's error before it does.
+watch(
+  () => route.fullPath,
+  () => (store.error = null),
+)
 </script>
 
 <template>
@@ -22,6 +31,7 @@ const route = useRoute()
       </ul>
     </nav>
     <main class="content">
+      <p v-if="store.error" class="api-error" role="alert">{{ store.error }}</p>
       <RouterView />
     </main>
   </div>
@@ -122,6 +132,16 @@ body {
   flex: 1;
   padding: 2rem;
   overflow-y: auto;
+}
+
+.api-error {
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid #f85149;
+  border-radius: 6px;
+  background: #2a1517;
+  color: #ffb3ad;
+  font-size: 0.9rem;
 }
 
 @media (max-width: 768px) {

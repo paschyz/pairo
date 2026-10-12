@@ -14,9 +14,34 @@ from pairo.domain.repo_config import parse_repo_config
 from pairo.domain.review import Review
 from pairo.domain.rules.alt import check_missing_alt
 from pairo.domain.rules.contrast import check_contrast
-from pairo.domain.suggestion import sanitize_suggestions
+from pairo.domain.suggestion import anchor_findings, sanitize_suggestions
 
 logger = logging.getLogger(__name__)
+
+# Beyond this the prompt cost and the context window are no longer under control.
+MAX_LLM_ADDED_LINES = 2000
+
+_NOTICE_LLM_DOWN = (
+    "⚠️ AI review unavailable for this run: only the built-in checks ran. "
+    "Push again to retry."
+)
+_NOTICE_QUOTA = "⚠️ Daily AI review quota reached: only the built-in checks ran."
+_NOTICE_CAPPED = (
+    f"⚠️ Large diff: the AI review covered the first {MAX_LLM_ADDED_LINES} "
+    "added lines only."
+)
+
+
+def _cap_added_lines(files: list[FileDiff], limit: int) -> tuple[list[FileDiff], bool]:
+    """Files to send to the LLM, cut once `limit` added lines are reached."""
+    out: list[FileDiff] = []
+    left = limit
+    for f in files:
+        if left <= 0:
+            break
+        out.append(FileDiff(f.path, f.added_lines[:left], f.status))
+        left -= len(f.added_lines)
+    return out, sum(len(f.added_lines) for f in files) > limit
 
 
 class CodeHost(Protocol):
@@ -126,10 +151,14 @@ class ReviewPullRequest:
         pr_created_at: datetime | None = None,
         base_ref: str | None = None,
     ) -> None:
+        # Config and rules come from the base branch: they apply once merged, and
+        # a PR can't switch off or rewrite the review of its own changes.
+        config_ref = base_ref or head_sha
         config_raw = await self._code_host.get_repo_file(
-            owner, repo, ".pairo.yml", head_sha
+            owner, repo, ".pairo.yml", config_ref
         )
         config = parse_repo_config(config_raw)
+        notices: list[str] = []
 
         if action == "synchronize" and before_sha:
             files = await self._code_host.get_compare_files(
@@ -156,14 +185,14 @@ class ReviewPullRequest:
             if count >= self._daily_quota:
                 skip_llm = True
                 logger.warning("Daily quota reached (%d), skipping LLM", count)
+                if has_added_lines:
+                    notices.append(_NOTICE_QUOTA)
 
         run_llm = has_added_lines and not skip_llm
         project_rules = ""
         if findings or run_llm:
-            # Rules come from the base branch: they apply once merged, and a PR
-            # can't rewrite the rules its own review follows.
             pairo_md = await self._code_host.get_repo_file(
-                owner, repo, PAIRO_MD, base_ref or head_sha
+                owner, repo, PAIRO_MD, config_ref
             )
             project_rules = (pairo_md or "")[:MAX_FILE_CHARS]
 
@@ -176,15 +205,27 @@ class ReviewPullRequest:
             ]
 
         if run_llm:
-            llm_findings = await self._llm.review(
-                files,
-                findings,
-                config.axes,
-                config.language,
-                project_context=project_rules,
-            )
-            findings.extend(llm_findings)
+            llm_files, capped = _cap_added_lines(files, MAX_LLM_ADDED_LINES)
+            if capped:
+                notices.append(_NOTICE_CAPPED)
+            try:
+                llm_findings = await self._llm.review(
+                    llm_files,
+                    findings,
+                    config.axes,
+                    config.language,
+                    project_context=project_rules,
+                )
+            except Exception:
+                # Say it on the PR: an empty review would read as "all clear".
+                logger.exception(
+                    "LLM review failed for %s/%s#%s", owner, repo, pr_number
+                )
+                notices.append(_NOTICE_LLM_DOWN)
+            else:
+                findings.extend(llm_findings)
 
+        findings = anchor_findings(findings, files)
         proposed = sum(1 for f in findings if f.code_suggestion)
         findings, dropped = sanitize_suggestions(findings, files)
         if proposed:
@@ -226,6 +267,7 @@ class ReviewPullRequest:
             output_tokens=self._llm.last_output_tokens,
             memory_filtered=filtered_count,
             memory_summary=memory_line,
+            notice="\n".join(notices),
         )
         await self._code_host.post_review(owner, repo, pr_number, review)
 

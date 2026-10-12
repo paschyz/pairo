@@ -4,6 +4,8 @@ import re
 from dataclasses import dataclass
 
 _COMMAND_RE = re.compile(r"@pairo\s+(ignore)(?:\s+(.+))?", re.IGNORECASE)
+# The reason is stored and sent to two LLM calls: a GitHub comment can be 65k chars.
+MAX_REASON_CHARS = 500
 
 
 @dataclass(frozen=True)
@@ -18,5 +20,5 @@ def parse_command(text: str) -> PairoCommand | None:
     if not match:
         return None
     action = match.group(1).lower()
-    reason = match.group(2).strip() if match.group(2) else None
+    reason = match.group(2).strip()[:MAX_REASON_CHARS] if match.group(2) else None
     return PairoCommand(action=action, reason=reason)

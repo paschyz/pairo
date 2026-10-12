@@ -38,6 +38,29 @@ async def test_get_pull_request_files() -> None:
 
 
 @respx.mock
+async def test_get_pull_request_files_follows_pagination() -> None:
+    def page(request: httpx.Request) -> httpx.Response:
+        n = 100 if request.url.params["page"] == "1" else 50
+        assert request.url.params["per_page"] == "100"
+        return httpx.Response(
+            200,
+            json=[
+                {
+                    "filename": f"p{request.url.params['page']}_{i}.py",
+                    "status": "added",
+                    "patch": "@@ -0,0 +1 @@\n+x",
+                }
+                for i in range(n)
+            ],
+        )
+
+    route = respx.get(f"{API}/repos/o/r/pulls/1/files").mock(side_effect=page)
+    files = await _client().get_pull_request_files("o", "r", 1)
+    assert len(files) == 150
+    assert route.call_count == 2
+
+
+@respx.mock
 async def test_get_pull_request_files_ignores_lockfiles() -> None:
     respx.get(f"{API}/repos/o/r/pulls/1/files").mock(
         return_value=httpx.Response(
@@ -153,3 +176,41 @@ async def test_post_review_no_findings() -> None:
     payload = json.loads(route.calls[0].request.content)
     assert "nothing to report" in payload["body"].lower()
     assert payload["comments"] == []
+
+
+@respx.mock
+async def test_post_review_shows_notice_instead_of_all_clear() -> None:
+    import json
+
+    route = respx.post(f"{API}/repos/o/r/pulls/1/reviews").mock(
+        return_value=httpx.Response(200, json={"id": 1})
+    )
+    await _client().post_review("o", "r", 1, Review(notice="⚠️ AI review unavailable"))
+    body = json.loads(route.calls[0].request.content)["body"]
+    assert "⚠️ AI review unavailable" in body
+    assert "nothing to report" not in body.lower()
+
+
+@respx.mock
+async def test_review_threads_skip_comments_not_written_by_a_bot() -> None:
+    def node(typename: str, db_id: int) -> dict[str, object]:
+        comment = {
+            "id": "x",
+            "databaseId": db_id,
+            "body": "b",
+            "author": {"__typename": typename},
+        }
+        return {"isResolved": True, "comments": {"nodes": [comment]}}
+
+    threads = {
+        "nodes": [node("Bot", 1), node("User", 2)],
+        "pageInfo": {"hasNextPage": False, "endCursor": None},
+    }
+    respx.post(f"{API}/graphql").mock(
+        return_value=httpx.Response(
+            200,
+            json={"data": {"repository": {"pullRequest": {"reviewThreads": threads}}}},
+        )
+    )
+    got = await _client().get_review_threads("o", "r", 1)
+    assert [t["comment_id"] for t in got] == [1]

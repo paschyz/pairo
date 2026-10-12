@@ -1,6 +1,8 @@
 import json
 from unittest.mock import AsyncMock, Mock, patch
 
+import pytest
+
 from pairo.domain.diff import AddedLine
 from pairo.domain.finding import Axis, Source
 from pairo.domain.ports import FileDiff
@@ -46,8 +48,10 @@ def test_parse_findings_empty_array() -> None:
     assert _parse_findings("[]") == []
 
 
-def test_parse_findings_malformed_json() -> None:
-    assert _parse_findings("not json") == []
+def test_parse_findings_malformed_json_raises() -> None:
+    # Unreadable output is a failed review, not a clean one.
+    with pytest.raises(ValueError):
+        _parse_findings("not json")
 
 
 def test_parse_findings_skips_invalid_entries() -> None:
@@ -118,17 +122,27 @@ async def test_litellm_reviewer_tracks_tokens(mock_litellm: Mock) -> None:
 
 
 @patch("pairo.infrastructure.llm.litellm_reviewer.litellm")
-async def test_litellm_reviewer_returns_empty_on_error(mock_litellm: Mock) -> None:
-    mock_litellm.acompletion = AsyncMock(side_effect=Exception("API error"))
+async def test_litellm_reviewer_raises_on_error(mock_litellm: Mock) -> None:
+    mock_litellm.acompletion = AsyncMock(side_effect=RuntimeError("API error"))
 
     reviewer = LiteLLMReviewer(
         model="gpt-4o",
         rate_limiter=RateLimiter(rpm=15),
     )
     files = [FileDiff("app.py", [AddedLine(1, "x = 1")])]
-    findings = await reviewer.review(files, [], ["crafts"], "en")
+    with pytest.raises(RuntimeError):
+        await reviewer.review(files, [], ["crafts"], "en")
 
-    assert findings == []
+
+@patch("pairo.infrastructure.llm.litellm_reviewer.litellm")
+async def test_litellm_reviewer_bounds_the_call(mock_litellm: Mock) -> None:
+    mock_litellm.acompletion = AsyncMock(return_value=_make_response([]))
+    reviewer = LiteLLMReviewer(model="m", rate_limiter=RateLimiter(rpm=15))
+    await reviewer.review([FileDiff("a.py", [AddedLine(1, "x")])], [], ["crafts"], "en")
+
+    kwargs = mock_litellm.acompletion.call_args[1]
+    assert kwargs["timeout"] > 0
+    assert kwargs["num_retries"] > 0
 
 
 @patch("pairo.infrastructure.llm.litellm_reviewer.litellm")

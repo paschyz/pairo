@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, Request, Response
+from sqlalchemy.orm import Session
 
 from pairo.application.propose_context_rule import ProposeContextRule
 from pairo.application.review_pull_request import ReviewPullRequest
@@ -15,6 +16,7 @@ from pairo.domain.decision import DecisionSignal, DecisionStatus, FindingDecisio
 from pairo.domain.marker import parse_marker
 from pairo.infrastructure.github.auth import GitHubAppAuth
 from pairo.infrastructure.github.client import GitHubClient
+from pairo.infrastructure.llm.cached_reviewer import CachedLLMReviewer
 from pairo.infrastructure.llm.factory import (
     create_judge,
     create_reviewer,
@@ -22,15 +24,36 @@ from pairo.infrastructure.llm.factory import (
 )
 from pairo.infrastructure.persistence.decision_repo import SqlDecisionRepository
 from pairo.infrastructure.persistence.engine import get_session
+from pairo.infrastructure.persistence.finding_cache import SqlFindingCache
 from pairo.infrastructure.persistence.repository import SqlReviewRepository
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-_HANDLED_ACTIONS = {"opened", "synchronize", "reopened"}
+_HANDLED_ACTIONS = {"opened", "synchronize", "reopened", "ready_for_review"}
 
-_seen_deliveries: set[str] = set()
+# ponytail: per-process memory of recent deliveries (insertion-ordered, bounded).
+# Reviews are also checked against the DB; use a shared store with several workers.
+_seen_deliveries: dict[str, None] = {}
+_MAX_SEEN_DELIVERIES = 10_000
+
+
+def _already_delivered(delivery_id: str) -> bool:
+    """True for a GitHub redelivery; records the id otherwise."""
+    if not delivery_id:
+        return False
+    if delivery_id in _seen_deliveries:
+        return True
+    _seen_deliveries[delivery_id] = None
+    if len(_seen_deliveries) > _MAX_SEEN_DELIVERIES:
+        del _seen_deliveries[next(iter(_seen_deliveries))]
+    return False
+
+
+def _written_by_bot(comment: dict[str, Any]) -> bool:
+    """Markers are only trusted in a bot's comment: anyone can paste one."""
+    return (comment.get("user") or {}).get("type") == "Bot"
 
 
 def _verify_signature(payload: bytes, signature: str | None) -> bool:
@@ -79,6 +102,15 @@ def _make_llm() -> Any:
     )
 
 
+def _with_cache(llm: Any, session: Session) -> Any:
+    """Same diff, rules, prompt and model: reuse the stored findings, zero LLM cost."""
+    model = getattr(llm, "model_name", "")
+    if not model:  # the fake provider has no model to key the cache on
+        return llm
+    cache = SqlFindingCache(session, ttl_days=settings.llm_cache_ttl_days)
+    return CachedLLMReviewer(llm, cache, model=model, axes=[])
+
+
 def _make_judge() -> Any:
     if not settings.llm_model_judge:
         return _make_llm()
@@ -104,11 +136,15 @@ async def _run_review(payload: dict[str, Any], delivery_id: str) -> None:
         auth = GitHubAppAuth(settings.github_app_id, _load_private_key())
         token = await auth.get_installation_token(installation_id)
         code_host = GitHubClient(token)
-        llm = _make_llm()
 
         session = get_session()
+        llm = _with_cache(_make_llm(), session)
         review_repo = SqlReviewRepository(session)
         decision_repo = SqlDecisionRepository(session)
+        # Survives a restart, unlike the in-memory set: don't pay and post twice.
+        if delivery_id and await review_repo.exists(delivery_id):
+            logger.info("Delivery %s already reviewed, skipping", delivery_id)
+            return
 
         uc = ReviewPullRequest(
             code_host=code_host,
@@ -197,9 +233,17 @@ async def _handle_comment(payload: dict[str, Any]) -> None:
         # Fetch the parent comment to get its marker
         parent = await code_host.get_comment(owner, repo, parent_id)
         marker = parse_marker(parent.get("body", ""))
-        if marker is None:
-            logger.info("Comment %s has no Pairo marker, ignoring", parent_id)
-            return  # Not a Pairo comment
+        if marker is None or not _written_by_bot(parent):
+            logger.info("Comment %s is not a Pairo finding, ignoring", parent_id)
+            return
+
+        # Dismissing is for maintainers and the PR's author, not any passer-by
+        # able to comment on a public repo.
+        assoc = comment.get("author_association")
+        pr_author = (payload["pull_request"].get("user") or {}).get("login")
+        if not is_trusted(assoc) and user != pr_author:
+            logger.info("%s may not dismiss findings on %s", user, repo_full)
+            return
 
         session = get_session()
         try:
@@ -221,7 +265,7 @@ async def _handle_comment(payload: dict[str, Any]) -> None:
             session.close()
 
         reply = "\U0001f44d Ignored on this PR."
-        if cmd.reason and is_trusted(comment.get("author_association")):
+        if cmd.reason and is_trusted(assoc):
             outcome = await _propose_rule(code_host, payload, parent, cmd.reason)
             if outcome:
                 reply += f" {outcome}"
@@ -239,11 +283,11 @@ async def _handle_thread(payload: dict[str, Any]) -> None:
     try:
         first = payload["thread"]["comments"][0]
         marker = parse_marker(first.get("body", ""))
-        if marker is None:
+        if marker is None or not _written_by_bot(first):
             logger.info(
-                "Thread on %s#%s has no Pairo marker, ignoring", repo_full, pr_number
+                "Thread on %s#%s is not a Pairo finding, ignoring", repo_full, pr_number
             )
-            return  # not a Pairo comment
+            return
 
         session = get_session()
         try:
@@ -297,6 +341,10 @@ async def webhook(
     payload = json.loads(body)
     logger.info("Webhook event=%s action=%s", event, payload.get("action"))
 
+    delivery_id = request.headers.get("X-GitHub-Delivery", "")
+    if _already_delivered(delivery_id):
+        return _ignored("Already processed")
+
     if event == "pull_request_review_comment":
         action = payload.get("action", "")
         if action != "created":
@@ -325,10 +373,5 @@ async def webhook(
     if payload.get("pull_request", {}).get("draft"):
         return _ignored("Ignored draft PR")
 
-    delivery_id = request.headers.get("X-GitHub-Delivery", "")
-    if delivery_id in _seen_deliveries:
-        return _ignored("Already processed")
-
-    _seen_deliveries.add(delivery_id)
     background_tasks.add_task(_run_review, payload, delivery_id)
     return {"detail": "Review queued"}

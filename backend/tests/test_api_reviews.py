@@ -104,6 +104,22 @@ async def test_get_review(
     assert data["findings"][0]["axis"] == "eco"
 
 
+@pytest.mark.parametrize(
+    "url",
+    [
+        "/api/reviews?limit=-1",
+        "/api/reviews?limit=100000000",
+        "/api/reviews?offset=-1",
+        "/api/reviews/0",
+        "/api/reviews/99999999999999999999",
+    ],
+)
+async def test_out_of_range_parameters_are_rejected(
+    client: AsyncClient, url: str
+) -> None:
+    assert (await client.get(url)).status_code == 422
+
+
 async def test_get_review_not_found(client: AsyncClient) -> None:
     resp = await client.get("/api/reviews/999")
     assert resp.status_code == 404

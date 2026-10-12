@@ -1,9 +1,14 @@
 """Tests for @pairo command parsing."""
 
-from pairo.domain.command import parse_command
+from pairo.domain.command import MAX_REASON_CHARS, parse_command
 
 
 class TestParseCommand:
+    def test_reason_is_capped(self):
+        cmd = parse_command("@pairo ignore " + "x" * 60_000)
+        assert cmd is not None
+        assert cmd.reason == "x" * MAX_REASON_CHARS
+
     def test_ignore_bare(self):
         cmd = parse_command("@pairo ignore")
         assert cmd is not None
